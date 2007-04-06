@@ -1,7 +1,7 @@
 require 'capture'
 
-capture = Capture.open_live('en0', 680)
-
-capture.each_packet do |moo|
-  puts moo
+Capture.open :device => 'en0', :snapshot_length => 8, :filter => 'tcp port 22' do |capture|
+  capture.each(10) do |packet|
+    p packet
+  end
 end
