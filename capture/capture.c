@@ -40,6 +40,7 @@ struct capture_object {
 	int			limit;			
     bpf_u_int32	netmask;
     int			dl_type;	/* data-link type (DLT_*) */
+	VALUE		dissector;
 };
 
 #define GetFilter(obj, filter) Data_Get_Struct(obj, struct filter_object, filter)
@@ -122,8 +123,21 @@ static VALUE capture_setfilter(VALUE self, VALUE v_filter) {
     return v_filter;
 }
 
+
+static VALUE capture_setdissector(VALUE self, VALUE dissector) {
+	if (!(IsKindOf(dissector, rb_cProc) || dissector == Qnil))
+		rb_raise(rb_eArgError, "dissector must be proc or nil");
+				
+    struct capture_object *cap;
+    GetCapture(self, cap);
+	
+	cap->dissector = dissector;
+	
+	return dissector;	
+}
+
 static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
-	VALUE v_device, v_snaplen = Qnil, v_promisc = Qnil, v_to_ms = Qnil, v_filter = Qnil, v_limit = Qnil;
+	VALUE v_device, v_snaplen = Qnil, v_promisc = Qnil, v_to_ms = Qnil, v_filter = Qnil, v_limit = Qnil, v_dissector = Qnil;
 	char *device;
 	int snaplen, promisc, to_ms;
 	int rs;
@@ -144,6 +158,7 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 		v_promisc = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("promiscuous")));
 		v_limit = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("limit")));
 		v_filter = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("filter")));
+		v_dissector = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("dissector")));
 		
 		v_device = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("device")));
 		
@@ -197,6 +212,8 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 	cap->netmask = netmask;
 	cap->dl_type = pcap_datalink(pcap);
 	
+	capture_setdissector(self, v_dissector);
+	
 	if (v_limit != Qnil) {
 		Check_Type(v_limit, T_FIXNUM);
 		cap->limit = FIX2INT(v_limit);
@@ -206,7 +223,7 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 	if (v_filter != Qnil) {
 		capture_setfilter(self, v_filter);
 	}
-
+	
 	if (rb_block_given_p()) {
 		rb_yield(self);
 		capture_close(self);
@@ -238,19 +255,23 @@ static VALUE capture_open_offline(VALUE class, VALUE fname) {
 	return self;
 }
 
-static void handler(struct capture_object *cap, const struct pcap_pkthdr *pkthdr, const u_char *data) {
-	// TODO: Ideally we wouldn't do all this at every iteration. I'll fix it later
-	VALUE proc = rb_block_proc();
-	VALUE v_arity = rb_funcall(proc, rb_intern("arity"), 0);
+static void handler1(struct capture_object *cap, const struct pcap_pkthdr *pkthdr, const u_char *data) {
+	if (cap->dissector != Qnil) {
+		VALUE dissected = rb_funcall(cap->dissector, rb_intern("call"), 1, rb_str_new((char *)data, pkthdr->caplen));
 		
-	int arity = FIX2INT(v_arity);
-	
-	if (arity < 2)
-		rb_yield_values(1, rb_str_new((char *)data, pkthdr->caplen)); // not sure why rb_yield doesn't work here, but it wasn't for me
-	else if (arity == 2)
-		rb_yield_values(2, rb_str_new((char *)data, pkthdr->caplen), rb_time_new(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
-	else
-		rb_raise(rb_eArgError, "invalid number of arguments to block");
+		rb_yield_values(1, dissected); // not sure why rb_yield doesn't work here, but it wasn't for me
+	} else
+		rb_yield_values(1, rb_str_new((char *)data, pkthdr->caplen));
+}
+
+
+static void handler2(struct capture_object *cap, const struct pcap_pkthdr *pkthdr, const u_char *data) {
+	if (cap->dissector != Qnil) {
+		VALUE dissected = rb_funcall(cap->dissector, rb_intern("call"), 1, rb_str_new((char *)data, pkthdr->caplen));
+
+		rb_yield_values(2, dissected, rb_time_new(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));
+	} else
+		rb_yield_values(2, rb_str_new((char *)data, pkthdr->caplen), rb_time_new(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec));	
 }
 
 static VALUE capture_dispatch(int argc, VALUE *argv, VALUE self) {
@@ -261,6 +282,13 @@ static VALUE capture_dispatch(int argc, VALUE *argv, VALUE self) {
 
 	DEBUG_PRINT("capture_dispatch");
 	GetCapture(self, cap);
+
+	VALUE proc = rb_block_proc();
+	VALUE v_arity = rb_funcall(proc, rb_intern("arity"), 0);
+		
+	int arity = FIX2INT(v_arity);
+
+	pcap_handler handler = (arity < 2) ? (pcap_handler)handler1 : (pcap_handler)handler2;
 
 	/* scan arg */
 	if (rb_scan_args(argc, argv, "01", &v_cnt) >= 1) {
@@ -287,6 +315,13 @@ static VALUE capture_loop(int argc, VALUE *argv, VALUE self) {
 
     DEBUG_PRINT("capture_loop");
     GetCapture(self, cap);
+	
+	VALUE proc = rb_block_proc();
+	VALUE v_arity = rb_funcall(proc, rb_intern("arity"), 0);
+		
+	int arity = FIX2INT(v_arity);
+
+	pcap_handler handler = (arity < 2) ? (pcap_handler)handler1 : (pcap_handler)handler2;
 
     /* scan arg */
 	if (rb_scan_args(argc, argv, "01", &v_cnt) >= 1) {
@@ -297,7 +332,7 @@ static VALUE capture_loop(int argc, VALUE *argv, VALUE self) {
 
     if (pcap_file(cap->pcap) != NULL) {
 		TRAP_BEG;
-		ret = pcap_loop(cap->pcap, cnt, (pcap_handler)handler, (u_char *)cap);
+		ret = pcap_loop(cap->pcap, cnt, handler, (u_char *)cap);
 		TRAP_END;
 	} else {
 		int fd = pcap_fileno(cap->pcap);
@@ -377,12 +412,21 @@ static VALUE capture_getlimit(VALUE self) {
 }
 
 static VALUE capture_setlimit(VALUE self, VALUE limit) {
-    struct capture_object *cap;
+    Check_Type(limit, T_FIXNUM);
+
+	struct capture_object *cap;
     GetCapture(self, cap);
 	
 	cap->limit = FIX2INT(limit);
 	
 	return limit;	
+}
+
+static VALUE capture_getdissector(VALUE self) {
+    struct capture_object *cap;
+    GetCapture(self, cap);
+	
+	return cap->dissector;
 }
 
 /*
@@ -454,6 +498,8 @@ void Init_capture() {
     rb_define_method(cCapture, "filter=", capture_setfilter, 1);
 	rb_define_method(cCapture, "limit", capture_getlimit, 0);
 	rb_define_method(cCapture, "limit=", capture_setlimit, 1);
+	rb_define_method(cCapture, "dissector", capture_getdissector, 0);
+	rb_define_method(cCapture, "dissector=", capture_setdissector, 0);
     rb_define_method(cCapture, "datalink", capture_datalink, 0);
 	rb_define_method(cCapture, "snapshot_length", capture_snapshot, 0);
     rb_define_method(cCapture, "stats", capture_stats, 0);
