@@ -298,7 +298,7 @@ static VALUE capture_dispatch(int argc, VALUE *argv, VALUE self) {
 		cnt = -1;
 
 	TRAP_BEG;
-	ret = pcap_dispatch(cap->pcap, cnt, (pcap_handler)handler, (u_char *)cap);
+	ret = pcap_dispatch(cap->pcap, cnt, handler, (u_char *)cap);
 	TRAP_END;
 	
 	if (ret == -1)
