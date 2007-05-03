@@ -2,3 +2,5 @@ To compile:
 
   ruby extconf.rb
   make
+
+To make sure that it works, open up test.rb and edit the interface you wish to listen on. Run test.rb (with appropriate privileges) and it should output some data.
