@@ -42,6 +42,14 @@ class PacketSet
       yield self[i]
     end
   end
+
+  def include?(packet)
+    each do |pkt|
+      return true if packet == pkt
+    end
+    
+    false
+  end
 end
 
 class Frame
@@ -50,8 +58,8 @@ class Frame
   end
 end
 
-a = PacketSet.new :type => 2..7, :baa => 2..5, :bababa => [:baar, :moo, :cree]
+#a = PacketSet.new :type => 2..7, :baa => 2..5, :bababa => [:baar, :moo, :cree]
 
-a.each do |frame|
-  p frame
-end
+#a.each do |frame|
+#  p frame
+#end
