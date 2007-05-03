@@ -1,23 +1,23 @@
-require "capture/capture"
+require "capture"
 require "packetset"
 require "thread"
 
 @rules = {
-          :rule1 =>  {
-                      :send => PacketSet.new(:type => 1..3),
-                      :filter => Proc.new { |packet| true },
-                      :expect => PacketSet.new(:type => 4..6),
-                      :pass => Proc.new { puts "Linksys" },
-                      :fail => :rule2
-                     },
-          :rule2 =>  {
-                      :send => PacketSet.new(:type => 7..9),
-                      :filter => Proc.new { |packet| true },
-                      :expect => PacketSet.new(:type => 10..12),
-                      :pass => Proc.new { puts "Aruba" },
-                      :fail => Proc.new { puts "Unknown" }
-                    }
-        }
+  :rule1 => {
+    :send => PacketSet.new(:type => 1..3),
+    :expect => PacketSet.new(:type => 4..6), # or string bpf filter!
+    :pass => Proc.new { puts "Linksys" }
+    :fail => :rule2,  # timeout
+    :timeout => 1000
+  },
+  :rule2 => {
+    :send => PacketSet.new(:type => 7..9),
+    :filter => Proc.new { |packet| true },
+    :expect => PacketSet.new(:type => 10..12),
+    :pass => Proc.new { puts "Aruba" },
+    :fail => Proc.new { puts "Unknown" }
+  }
+}
 
 def eval_rule(rule)
   sent = false
