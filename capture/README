@@ -1,0 +1,4 @@
+To compile:
+
+  ruby extconf.rb
+  make
