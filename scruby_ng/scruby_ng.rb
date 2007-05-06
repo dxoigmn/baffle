@@ -1,91 +1,16 @@
 require 'bit-struct'
 
 class BitStruct
-  class Field
-    attr_reader :applicable
-    
-    def offset
-      if @offset.kind_of?(Proc)
-        @offset.call(@prev)
-      else
-        @offset
-      end
+  class OptionalField < Field
+    def class_name
+      @child.class_name
     end
     
-    def length
-      if @applicable and !@applicable.call
-        return 0
-      end
+    def add_accessors_to(cl, attr = name)
       
-      return @length
-    end
-    
-    def inspectable?
-      if @applicable
-        @applicable.call
-      else
-        true
-      end
-    end
-    
-    # Options are _display_name_, _default_, and _format_ (subclasses of Field
-    # may add other options).
-    def initialize(prev, offset, length, name, opts = {})
-      @prev, @offset, @length, @name, @options =
-        prev, offset, length, name, opts
-      
-      @display_name = opts[:display_name] || opts["display_name"]
-      @default      = opts[:default] || opts["default"] || self.class.default
-      @format       = opts[:format] || opts["format"]
-      @applicable   = opts[:applicable] || opts["applicable"]
     end
   end
-  
-  class CharField < Field
-    def add_accessors_to(cl, attr = name) # :nodoc:
-      unless offset % 8 == 0
-        raise ArgumentError,
-          "Bad offset, #{offset}, for #{self.class} #{name}." +
-          " Must be multiple of 8."
-      end
-      
-      unless length % 8 == 0
-        raise ArgumentError,
-          "Bad length, #{length}, for #{self.class} #{name}." +
-          " Must be multiple of 8."
-      end
-      
-      field = self
-      
-      cl.class_eval do
-        define_method attr do ||
-          offset_byte = field.offset(self) / 8
-          length_byte = field.length(self) / 8
-          last_byte = offset_byte + length_byte - 1
-          byte_range = offset_byte..last_byte
-          val_byte_range = 0..length_byte-1
-
-          self[byte_range].to_s
-        end
-
-        define_method "#{attr}=" do |val|
-          offset_byte = field.offset(self) / 8
-          length_byte = field.length(self) / 8
-          last_byte = offset_byte + length_byte - 1
-          byte_range = offset_byte..last_byte
-          val_byte_range = 0..length_byte-1
-
-
-          val = val.to_s
-          if val.length < length_byte
-            val += "\0" * (length_byte - val.length)
-          end
-          self[byte_range] = val[val_byte_range]
-        end
-      end
-    end
-  end
-  
+    
   class BitEnumField < UnsignedField
     def BitEnumField.class_name
       "BitEnumField"
