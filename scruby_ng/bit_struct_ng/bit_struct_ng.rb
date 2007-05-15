@@ -9,11 +9,12 @@ class BitStruct < String
     attr_reader :default
     attr_reader :format
   
-    def initialize(parent, name, opts)
+    def initialize(parent, name, options)
       @parent, @name = parent, name
 
-      @length = opts[:length]
-      @applicable_proc = opts[:applicable]
+      @length = options[:length]
+      @applicable_proc = options[:applicable]
+      @options = options
     end
     
     def offset(instance)
@@ -35,6 +36,10 @@ class BitStruct < String
 
     def set(instance, value)
 
+    end
+    
+    def emtpy!(instance)
+      
     end
     
     def length(instance)
@@ -73,6 +78,12 @@ class BitStruct < String
     end
   end
   
+  def ensure_length(length)
+    if length > self.to_s.length
+      self.concat("\0" * (length - self.to_s.length))
+    end
+  end
+  
   def method_missing(name, *args)
     field_name = name.id2name.sub(/=$/, '').intern
     
@@ -86,6 +97,14 @@ class BitStruct < String
       end
     else
       raise NoMethodError.new("undefined method #{name.id2name} on #{self.class.name}")
+    end
+  end
+  
+  def initialize(*options)
+    self.class.fields.each do |field|
+      if field.applicable?(self)
+        field.empty!(self)
+      end
     end
   end
   
@@ -131,13 +150,14 @@ class BitStruct < String
   end
 end
 
+require 'char_field'
+require 'float_field'
+require 'nested_field'
+require 'octet_field'
+require 'hex_octet_field'
 
-class Test < BitStruct
-  char :letter, 24, "Letter"
-  char :age, 16, "Age", :applicable => proc { |instance| instance.letter =~ /a/ }
-  char :age1, 8, "Age"
-  char :age2, 8, "Age"
-end
-
-a = Test.new
+require 'pad_field'
+require 'signed_field'
+require 'text_field'
+require 'unsigned_field'
 

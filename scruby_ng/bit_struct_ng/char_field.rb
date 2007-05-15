@@ -23,7 +23,12 @@ class BitStruct
         val += "\0" * (length_byte - val.length)
       end
 
+      instance.ensure_length(last_byte)
       instance[byte_range] = val[val_byte_range]
+    end
+    
+    def empty!(instance)
+      set(instance, "")
     end
   end
   

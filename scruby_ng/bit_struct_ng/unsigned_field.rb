@@ -1,0 +1,234 @@
+
+class BitStruct
+  class UnsignedField < Field
+    def get(instance)
+      offset_byte = offset(instance) / 8
+      offset_bit = offset(instance) % 8
+      
+      length_bit = offset_bit + length(instance)
+      length_byte = (length_bit / 8.0).ceil
+      
+      last_byte = offset_byte + length_byte - 1
+      
+      divisor = options[:fixed] || options["fixed"]
+      divisor_f = divisor && divisor.to_f
+      
+      endian = (options[:endian] || options["endian"]).to_s
+      case endian
+      when "native"
+        ctl = length(instance) <= 16 ? "S" : "L"
+      when "little"
+        ctl = length(instance) <= 16 ? "v" : "V"
+      when "network", "big", ""
+        ctl = length(instance) <= 16 ? "n" : "N"
+      else
+        raise ArgumentError,
+          "Unrecognized endian option: #{endian.inspect}"
+      end
+      
+      # This should not be in here
+      data_is_big_endian = ([1234].pack(ctl) == [1234].pack(length(instance) <= 16 ? "n" : "N"))
+      
+      if length_byte == 1
+        rest = 8 - length_bit
+        mask  = ["0"*offset_bit + "1"*length(instance) + "0"*rest].pack("B8")[0]
+        mask2 = ["1"*offset_bit + "0"*length(instance) + "1"*rest].pack("B8")[0]
+      
+        if divisor
+          return ((instance[offset_byte] & mask) >> rest) / divisor_f
+        else
+          return (instance[offset_byte] & mask) >> rest
+        end
+      elsif offset_bit == 0 and length(instance) % 8 == 0
+        field_length = length(instance)
+        byte_range = offset_byte..last_byte
+        
+        case field_length
+        when 8
+          if divisor
+            return instance[offset_byte] / divisor_f
+          else
+            return instance[offset_byte]
+          end
+        when 16, 32
+          if divisor
+            return instance[byte_range].unpack(ctl).first / divisor_f
+          else
+            return instance[byte_range].unpack(ctl).first
+          end
+        else
+          reader_helper = proc do |substr|
+            bytes = substr.unpack("C*")
+            bytes.reverse! unless data_is_big_endian
+            bytes.inject do |sum, byte|
+              (sum << 8) + byte
+            end
+          end
+          
+          writer_helper = proc do |val|
+            bytes = []
+            while val > 0
+              bytes.push val % 256
+              val = val >> 8
+            end
+            if bytes.length < length_byte
+              bytes.concat [0] * (length_byte - bytes.length)
+            end
+
+            bytes.reverse! if data_is_big_endian
+            bytes.pack("C*")
+          end    
+      
+          if divisor
+            return reader_helper[instance[byte_range]] / divisor_f
+          else
+            return reader_helper[instance[byte_range]]
+          end
+        end
+      
+      elsif length_byte == 2
+        byte_range = offset_byte..last_byte
+        rest = 16 - length_bit
+        
+        mask  = ["0"*offset_bit + "1"*length + "0"*rest]
+        mask = mask.pack("B16").unpack(ctl).first
+        
+        mask2 = ["1"*offset_bit + "0"*length + "1"*rest]
+        mask2 = mask2.pack("B16").unpack(ctl).first
+        
+        if divisor
+          return ((instance[byte_range].unpack(ctl).first & mask) >> rest) / divisor_f
+        else
+          return (instance[byte_range].unpack(ctl).first & mask) >> rest
+        end
+      else
+        raise "unsupported: #{inspect}"
+      end
+    end
+      
+    def set(instance, value)
+      offset_byte = offset(instance) / 8
+      offset_bit = offset(instance) % 8
+      
+      length_bit = offset_bit + length(instance)
+      length_byte = (length_bit / 8.0).ceil
+      
+      last_byte = offset_byte + length_byte - 1
+      
+      divisor = options[:fixed] || options["fixed"]
+      divisor_f = divisor && divisor.to_f
+      
+      endian = (options[:endian] || options["endian"]).to_s
+      case endian
+      when "native"
+        ctl = length(instance) <= 16 ? "S" : "L"
+      when "little"
+        ctl = length(instance) <= 16 ? "v" : "V"
+      when "network", "big", ""
+        ctl = length(instance) <= 16 ? "n" : "N"
+      else
+        raise ArgumentError,
+          "Unrecognized endian option: #{endian.inspect}"
+      end
+      
+      instance.ensure_length(last_byte + 1)
+      
+      # This should not be in here
+      data_is_big_endian = ([1234].pack(ctl) == [1234].pack(length(instance) <= 16 ? "n" : "N"))
+      
+      if length_byte == 1
+        rest = 8 - length_bit
+        mask  = ["0"*offset_bit + "1"*length(instance) + "0"*rest].pack("B8")[0]
+        mask2 = ["1"*offset_bit + "0"*length(instance) + "1"*rest].pack("B8")[0]
+      
+        if divisor
+          value = (value * divisor).round
+          instance[offset_byte] = (instance[offset_byte] & mask2) | ((value << rest) & mask)
+        else
+          instance[offset_byte] = (instance[offset_byte] & mask2) | ((value << rest) & mask)
+        end
+      elsif offset_bit == 0 and length(instance) % 8 == 0
+        field_length = length(instance)
+        byte_range = offset_byte..last_byte
+        
+        case field_length
+        when 8
+          if divisor
+            value = (value * divisor).round
+            instance[offset_byte] = value
+          else
+            instance[offset_byte] = value
+          end
+        when 16, 32
+          if divisor
+            value = (value * divisor).round
+            instance[byte_range] = [value].pack(ctl)
+          else
+            instance[byte_range] = [value].pack(ctl)
+          end
+        else
+          reader_helper = proc do |substr|
+            bytes = substr.unpack("C*")
+            bytes.reverse! unless data_is_big_endian
+            bytes.inject do |sum, byte|
+              (sum << 8) + byte
+            end
+          end
+          
+          writer_helper = proc do |val|
+            bytes = []
+            while val > 0
+              bytes.push val % 256
+              val = val >> 8
+            end
+            if bytes.length < length_byte
+              bytes.concat [0] * (length_byte - bytes.length)
+            end
+
+            bytes.reverse! if data_is_big_endian
+            bytes.pack("C*")
+          end    
+      
+          if divisor
+            instance[byte_range] = writer_helper[(value * divisor).round]
+          else
+            instance[byte_range] = writer_helper[value]
+          end
+        end
+      
+      elsif length_byte == 2
+        byte_range = offset_byte..last_byte
+        rest = 16 - length_bit
+        
+        mask  = ["0"*offset_bit + "1"*length + "0"*rest]
+        mask = mask.pack("B16").unpack(ctl).first
+        
+        mask2 = ["1"*offset_bit + "0"*length + "1"*rest]
+        mask2 = mask2.pack("B16").unpack(ctl).first
+        
+        if divisor
+          value = (value * divisor).round
+          x = (instance[byte_range].unpack(ctl).first & mask2) | ((value << rest) & mask)
+          instance[byte_range] = [x].pack(ctl)
+          
+        else
+          x = (instance[byte_range].unpack(ctl).first & mask2) | ((value << rest) & mask)
+          instance[byte_range] = [x].pack(ctl)
+        end
+      else
+        raise "unsupported: #{inspect}"
+      end
+    end
+    
+    def empty!(instance)
+      set(instance, 0)
+    end
+  end
+  
+  class << self
+    def unsigned(name, length, *rest)
+      opts = parse_options(rest, name, UnsignedField)
+      add_field(name, length, opts)
+    end
+  end
+end

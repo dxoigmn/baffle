@@ -10,17 +10,17 @@ class BitStruct
       endian = (options[:endian] || options["endian"]).to_s
       case endian
       when "native"
-        ctl = case length
+        ctl = case length(instance)
           when 32; "f"
           when 64; "d"
         end
       when "little"
-        ctl = case length
+        ctl = case length(instance)
           when 32; "e"
           when 64; "E"
         end
       when "network", "big", ""
-        ctl = case length
+        ctl = case length(instance)
           when 32; "g"
           when 64; "G"
         end
@@ -29,7 +29,7 @@ class BitStruct
           "Unrecognized endian option: #{endian.inspect}"
       end
       
-      self[byte_range].unpack(ctl).first
+      instance[byte_range].unpack(ctl).first
     end
     
     def set(instance, value)
@@ -37,15 +37,35 @@ class BitStruct
       length_byte = length(instance) / 8
       last_byte = offset_byte + length_byte - 1
       byte_range = offset_byte..last_byte
-      val_byte_range = 0..length_byte-1
-      
-      
-      val = value.to_s
-      if val.length < length_byte
-        val += "\0" * (length_byte - val.length)
+
+      endian = (options[:endian] || options["endian"]).to_s
+      case endian
+      when "native"
+        ctl = case length(instance)
+          when 32; "f"
+          when 64; "d"
+        end
+      when "little"
+        ctl = case length(instance)
+          when 32; "e"
+          when 64; "E"
+        end
+      when "network", "big", ""
+        ctl = case length(instance)
+          when 32; "g"
+          when 64; "G"
+        end
+      else
+        raise ArgumentError,
+          "Unrecognized endian option: #{endian.inspect}"
       end
 
-      instance[byte_range] = val[val_byte_range]
+      instance.ensure_length(last_byte)
+      instance[byte_range] = [value].pack(ctl)
+    end
+    
+    def empty!(instance)
+      set(instance, 0.0)
     end
   end
   
