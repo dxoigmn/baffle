@@ -1,6 +1,8 @@
 $PREVENT_INAPPLICABLE_FIELDS = false
 
 class BitStruct < String
+  undef type
+
   class Field
     attr_reader :parent
     attr_reader :name
@@ -69,7 +71,7 @@ class BitStruct < String
       nil
     end
   end
-  
+   
   def set_field_value(name, value)
     field = self.class.field(name)
     
@@ -101,9 +103,13 @@ class BitStruct < String
   end
   
   def initialize(*options)
-    self.class.fields.each do |field|
-      if field.applicable?(self)
-        field.empty!(self)
+    if options.size == 1 and options[0].kind_of?(String)
+      super(options[0])
+    else
+      self.class.fields.each do |field|
+        if field.applicable?(self)
+          field.empty!(self)
+        end
       end
     end
   end
@@ -152,12 +158,13 @@ end
 
 require 'char_field'
 require 'float_field'
+require 'unsigned_field'
 require 'nested_field'
 require 'octet_field'
 require 'hex_octet_field'
-
+require 'enum_field'
+require 'flags_field'
 require 'pad_field'
 require 'signed_field'
 require 'text_field'
-require 'unsigned_field'
 
