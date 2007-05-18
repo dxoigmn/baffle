@@ -11,11 +11,11 @@ class Packet
 
     def set(instance, buffer, value)
       if value.kind_of?(Integer)
-        super(instanve, value)
+        super(instance, buffer, value)
       else
         flags = 0
         options[:spec].each_with_index { |item, index| flags |= 2 ** index if value.include?(item)}
-        super(instance, flags)
+        super(instance, buffer, flags)
       end
     end
   end

@@ -24,7 +24,7 @@ class Packet
 
       data = value.split(sep).map{|s|s.to_i(base)}.pack("c*")
       
-      super(instance, data)
+      super(instance, buffer, data)
     end 
     
   end
