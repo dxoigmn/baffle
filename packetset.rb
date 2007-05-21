@@ -3,21 +3,24 @@ class PacketSet
   
   def initialize(*parameters)
     @fields = []
-    
+
     parameters[0].each_pair do |key, value|
       @fields << Pair.new(key, value)
     end
         
-    @field_sizes = @fields.map do |field| 
+    @field_sizes = @fields.map do |field|
       if field.value.respond_to?(:size)
         field.value.size
-      else
+      elsif field.value.respond_to?(:entries)
         field.value.entries.size
+      else
+        field.value = [field.value]
+        1
       end
     end
   end
   
-  def [](index)           
+  def [](index)          
     indices = @field_sizes.inject([]) do |accumulator, size|
       remainder = index % size 
       index /= size #/      
@@ -51,15 +54,3 @@ class PacketSet
     false
   end
 end
-
-class Frame
-  def initialize(*parameters)
-    
-  end
-end
-
-#a = PacketSet.new :type => 2..7, :baa => 2..5, :bababa => [:baar, :moo, :cree]
-
-#a.each do |frame|
-#  p frame
-#end
