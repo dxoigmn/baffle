@@ -9,7 +9,7 @@ require "timeout"
 INTERFACE = "ath0"
 DRIVER = "madwifing"
 
-@rules = {
+$rules = {
   :rule1 => {
     :send => PacketSet.new(:class => Dot11),
     :expect => PacketSet.new(:class => Dot11), # or string bpf filter!
@@ -41,6 +41,7 @@ def eval_rule(device, rule, packet)
     
     Capture.open params do |capture|
       capture.each do |pkt|
+        #puts "Received packet!"
         if sent
           puts "Got response!"
           captured_packet = pkt 
@@ -70,7 +71,7 @@ def eval_rule(device, rule, packet)
   # Evaluate next rule/proc
   case next_rule.class.name
     when "Symbol"
-      eval_rule @rules[next_rule]
+      eval_rule $rules[next_rule]
     when "Proc"
       next_rule.call
   end
@@ -78,7 +79,7 @@ end
 
 device = Lorcon::Device.new(INTERFACE, DRIVER, 1)
 
-@rules.each do |name, rule|
+$rules.each do |name, rule|
   if rule[:send].kind_of? PacketSet
     rule[:send].each do |params|
       packet_class = params[:class]

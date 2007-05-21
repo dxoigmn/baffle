@@ -97,7 +97,7 @@ static VALUE lorcon_driver_open(int argc, VALUE *argv, VALUE self) {
 	 *other than atheros with madwifi-old 
 	 */
 	//ret = tx80211_setmode(in_tx, IW_MODE_MONITOR); 
-	ret = tx80211_setfunctionalmode(in_tx, TX80211_FUNCMODE_INJMON);
+	ret = tx80211_setfunctionalmode(in_tx, TX80211_FUNCMODE_INJECT);
 	if (ret != 0) {
 		//rb_raise(rb_eRuntimeError, "Lorcon could not place the card into monitor mode");
 		rb_raise(rb_eRuntimeError, "Lorcon could not place the card into injection + monitor mode");
@@ -105,7 +105,7 @@ static VALUE lorcon_driver_open(int argc, VALUE *argv, VALUE self) {
 	}
 
 	/* Switch to the given channel */
-	ret = tx80211_setchannel(in_tx, NUM2INT(rbchannel));
+	ret = tx80211_setchannel(in_tx, FIX2INT(rbchannel));
 	if (ret < 0) {
 		rb_raise(rb_eRuntimeError, "Lorcon could not set the channel");
 		return(Qnil);
@@ -142,8 +142,31 @@ static VALUE lorcon_driver_write(int argc, VALUE *argv, VALUE self) {
 			break;
 	}
 
-	cnt = NUM2INT(rbcnt);
-	dly = NUM2INT(rbdelay);
+	cnt = FIX2INT(rbcnt);
+	dly = FIX2INT(rbdelay);
+	
+	/* Initialize the packet structure */
+	tx80211_initpacket(&in_packet);
+
+	/* Modulation and rate are per-packet parameters */
+	if ((tx80211_getcapabilities(in_tx) & 
+			TX80211_CAP_SETMODULATION) != 0) {
+
+		ret = tx80211_setmodulation(in_tx, &in_packet, TX80211_MOD_DSSS);
+		if (ret < 0) {
+      rb_raise(rb_eRuntimeError, "Error setting modulation mechanism");
+		  return(Qnil);
+		}
+
+	}
+
+	if ((tx80211_getcapabilities(in_tx) & TX80211_CAP_SETRATE) != 0) {
+		ret = tx80211_settxrate(in_tx, &in_packet, TX80211_RATE_2MB);
+		if (ret < 0) {
+		  rb_raise(rb_eRuntimeError, "Error setting TX rate");
+		  return(Qnil);
+		}
+	}
 	
 	in_packet.packet = StringValuePtr(rbbuff);
 	in_packet.plen = RSTRING(rbbuff)->len;
@@ -151,7 +174,7 @@ static VALUE lorcon_driver_write(int argc, VALUE *argv, VALUE self) {
 	for (; cnt > 0; cnt--) {
 		ret = tx80211_txpacket(in_tx, &in_packet);
 		if (ret < 0) 
-			return(INT2NUM(ret));
+			return(INT2FIX(ret));
 		if (dly > 0)
 			usleep(dly);
 	}
