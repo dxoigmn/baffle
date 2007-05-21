@@ -1,8 +1,7 @@
-
 class Packet
   class EnumField < UnsignedField
-    #def get(instance)
-    #  options[:spec][super(instance)]
+    #def get(instance, buffer)
+    #  options[:spec][super(instance, buffer)]
     #end
     
     def set(instance, buffer, value)

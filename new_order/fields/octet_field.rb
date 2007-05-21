@@ -11,7 +11,9 @@ class Packet
       fmt   = self.class::FORMAT
       
       ary = []
-      super(instance).each_byte do |c|
+      chars = super(instance, buffer) || ""
+      
+      chars.each_byte do |c|
         ary << fmt % c
       end
       ary.join(sep)

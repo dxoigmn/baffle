@@ -6,68 +6,87 @@ class Packet
   undef type
   
   def length
-    last_field = self.class.fields[-1]
-    
-    ((last_field.offset(self) + last_field.length(self)) / 8).ceil
+    data.length
   end
+  
   alias size length
   
   def data
     construct
   end
   
-  def data=(string)
-    dissect(string)
+  def data=(str)
+    dissect(str)
   end
   
-  def initialize(*parameters)
-    if parameters.length == 1 and parameters[0].kind_of?(String)
-      data = parameters[0]
-    end
+  def initialize(data="")
+    @field_values = {}
+    self.data = data
   end
   
   def /(other)
-    if self.class.nested_field
-      duplicate = dup
-      duplicate.send(:set_field_value, self.class.nested_field.name, other)
-      
-      duplicate
-    else
-      raise "Packet cannot contain a payload"
+    raise "Packet cannot contain a nested field." if self.class.nested_field == nil
+    
+    duplicate = dup
+    
+    nested = duplicate
+    
+    while nested.send(:get_field_value, nested.class.nested_field.name) != nil
+      nested = nested.send(:get_field_value, nested.class.nested_field.name)
     end
+    
+    nested.send(:set_field_value, nested.class.nested_field.name, other)
+    
+    duplicate
   end
   
   private
   
   def construct
-    buffer = "\0" * length
+    buffer = ""
     
-    self.class.fields.each do |field|
-      name = field.name
+    self.class.fields.each do |field|    
+      next if !field.applicable?(self)
       
-      value = get_field_value(name)
+      if field.kind_of?(NestedField)
+        next if get_field_value(field.name) == nil
+      end
+      
+      offset = (field.offset(self) / 8.0).ceil
+      length = (field.length(self) / 8.0).ceil
+
+      #puts "#{self.class}: #{field.name}[#{offset} + #{length}] requires #{offset + length} bytes...#{buffer.length} bytes in buffer"
+
+      buffer << "\0" * (offset + length - buffer.length)
+      
+      value = get_field_value(field.name)
       field.set(self, buffer, value) if value
+    end
+
+    if @nested_field    
+      buffer << @nested_field.data
     end
     
     buffer
   end
   
-  def dissect(string)
+  def dissect(buffer)
     self.class.fields.each do |field|
-      name = field[name]
-
-      value = field.get(self, buffer)
+      if field.kind_of?(NestedField)
+        next if get_field_value(field.name) == nil
+      end
       
-      set_field_value(name, value)
-    end    
+      value = field.get(self, buffer)
+      set_field_value(field.name, value)
+    end
   end
  
   def get_field_value(field_name)
-    (@field_values ||= {})[field_name]
+    @field_values[field_name]
   end
   
   def set_field_value(field_name, value)
-    (@field_values ||= {})[field_name] = value
+    @field_values[field_name] = value
   end
 
   def method_missing(name, *args)
@@ -124,6 +143,7 @@ class Packet
       field = field_class.new(self, name, options)
       
       if field_class == NestedField
+        # TODO: Throw exception if nested field is already set! (i.e. only allow 1 nested field)
         @nested_field = field
       end
       

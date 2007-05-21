@@ -7,6 +7,10 @@ class Packet
       last_byte = offset_byte + length_byte - 1
       byte_range = offset_byte..last_byte
       
+      if offset_byte + length_byte > buffer.length
+        return options[:default] || options["default"] || nil
+      end
+      
       instance[byte_range].sub(/\0*$/, "").to_s
     end
     

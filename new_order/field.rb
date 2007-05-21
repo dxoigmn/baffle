@@ -37,7 +37,11 @@ class Packet
     end
     
     def length(instance)
-      @length || 0
+      if @length.class == Proc
+        @length[instance]
+      else
+        @length || 0
+      end
     end
     alias size length
     

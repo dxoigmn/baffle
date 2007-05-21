@@ -1,10 +1,12 @@
 
 class Packet
   class FlagsField < UnsignedField
-    #def get(instance)
-    #  value = super(instance)
-    #  ret = []
-    #  options[:spec].each_with_index { |item, index| ret << item if value[index] == 1 }
+    #def get(instance, buffer)
+    #  value = super(instance, buffer) || 0
+    #  ret = [] 
+    #  options[:spec].each_with_index do |item, index| 
+    #    ret << item if value[index] == 1
+    #  end
     #  
     #  ret
     #end

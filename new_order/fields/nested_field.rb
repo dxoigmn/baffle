@@ -6,11 +6,13 @@ class Packet
       last_byte = offset_byte + length_byte - 1
       byte_range = offset_byte..last_byte
 
-      nested_class = options[:class]
-      
-      nested_class = nested_class[instance] if nested_class.kind_of?(Proc)
-      
-      nested_class.new(instance[byte_range])
+      nested_class = nested_class(instance)
+
+      if nested_class != nil
+        nested_class.new(buffer[byte_range])
+      else
+        nil
+      end
     end
     
     def set(instance, buffer, value)
@@ -19,14 +21,27 @@ class Packet
       last_byte = offset_byte + length_byte - 1
       byte_range = offset_byte..last_byte
 
-      
+      buffer[byte_range] = value.data
     end
     
     def length(instance)
+      nested_class = nested_class(instance)
       
-      instance.send(name).length
+      if nested_class != nil
+        nested = nested_class.new()
+        nested.length * 8
+      else
+        0
+      end
     end
     
+    private
+    def nested_class(instance)
+      nested_class = options[:nested_class]
+      nested_class = nested_class[instance  ] if nested_class.kind_of?(Proc)
+      
+      nested_class
+    end
   end
   
   class << self

@@ -14,25 +14,16 @@ class Dot11 < Packet
   hex_octets  :addr3,     48, 'Address 3',  :applicable => proc {|instance| [0, 2].include?(instance.type)}
   unsigned    :sc,        16, 'SC',         :endian => :little, :applicable => proc {|instance| instance.type != 1}
   hex_octets  :addr4,     48, 'Address 4',  :applicable => proc {|instance| instance.type == 2 && (instance.fc & 0x3 == 0x3)}
-  nest        :payload,   nil,'Payload',    :class => proc {|instance|
-    if instance.fc.include?('wep')
-      Dot11WEP # We don't really need to implement this for now...
+  nest        :frame,    nil, 'Payload',    :nested_class => proc {|instance|
+    #puts "instance.fc = #{instance.fc.inspect}"
+    if instance.fc & 0x40 == 0x40
+      Dot11WEP
     elsif instance.type == 0
-      [Dot11AssoReq,
-        Dot11AssoResp,  
-        Dot11ReassoReq, 
-        Dot11ReassoResp,
-        Dot11ProbeReq,  
-        Dot11ProbeResp, 
-        nil,
-        nil,
-        Dot11Beacon,    
-        Dot11ATIM,     
-        Dot11Disas,    
-        Dot11Auth,      
-        Dot11Deauth][instance.subtype]
-    end   
-    # Return nil, which would get handled higher up and make it a Raw nested packet type
+      [Dot11AssoReq, Dot11AssoResp, Dot11ReassoReq, Dot11ReassoResp, Dot11ProbeReq, Dot11ProbeResp, nil, nil,
+       Dot11Beacon, Dot11ATIM, Dot11Disas, Dot11Auth, Dot11Deauth, nil, nil, nil,
+       nil, nil, nil, nil, nil, nil, nil, nil,
+       nil, nil, nil, nil, nil, nil, nil][instance.subtype]
+    end
   }
 end
 
@@ -52,24 +43,22 @@ $status_code = {0 => "success", 1 => "failure", 10 => "cannot-support-all-cap",
                 14 => "bad-seq-num", 15 => "challenge-failure",
                 16 => "timeout", 17 => "AP-full",18 => "rate-unsupported" }
 
-class Dot11Beacon < Packet
-  name        "802.11 Beacon"
-  
-  unsigned    :timestamp, 64, "Timestamp", :endian => :little
-  unsigned    :beacon_interval, 16, "Beacon Interval", :endian => :little, :default => 0x0064 # I think that default is what scapy means... should check it, but not really important
-  flags       :capabilities, 16, "Capabilities", :spec => $capability_list # Defined above
-end
-    
-
 class Dot11Elt < Packet
   name        "802.11 Information Element"
   
-  enum        :id, 8, "ID", :spec => {0 => "SSID", 1 => "Rates", 2 =>  "FHset", 3 => "DSset", 4 => "CFset", 5 => "TIM", 6 => "IBSSset", 16 => "challenge",
-                                      42 => "ERPinfo", 47 => "ERPinfo", 48 => "RSNinfo", 50 => "ESRates",221 => "vendor",68 => "reserved"}
-  unsigned    :info_length, 8, "Information Length"
+  enum        :id,          8, "ID", :spec => {0 => "SSID", 1 => "Rates", 2 =>  "FHset", 3 => "DSset", 4 => "CFset", 5 => "TIM", 6 => "IBSSset", 16 => "challenge", 42 => "ERPinfo", 47 => "ERPinfo", 48 => "RSNinfo", 50 => "ESRates",221 => "vendor",68 => "reserved"}
+  unsigned    :info_length, 8, "Information Length", :default => 0
+  char        :info,        proc { |instance| instance.info_length * 8 }, "Information"
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
+end
+
+class Dot11Beacon < Packet
+  name        "802.11 Beacon"
   
-  # The second param is always the length. Putting a proc in there makes it variable length.
-  char        :info, proc {|instance| instance.info_length}, "Information"    
+  unsigned    :timestamp,         64,   "Timestamp", :endian => :little
+  unsigned    :beacon_interval,   16,   "Beacon Interval", :endian => :little, :default => 0x0064
+  flags       :capabilities,      16,   "Capabilities", :spec => $capability_list
+  nest        :elt,              nil,   "Nested ELT", :nested_class => Dot11Elt
 end
 
 class Dot11ATIM < Packet
@@ -87,6 +76,7 @@ class Dot11AssoReq < Packet
   
   flags       :capabilities, 16, "Capabilities", :spec => $capability_list
   unsigned    :listen_interval, 16, "Listen Interval", :endian => :little, :default => 0x00C8
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
 
 
@@ -96,6 +86,7 @@ class Dot11AssoResp < Packet
   flags       :capabilities, 16, "Capabilities", :spec => $capability_list
   unsigned    :status, 16, "Status", :endian => :little
   unsigned    :aid, 16, :endian => :little
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
 
 class Dot11ReassoReq < Packet
@@ -104,15 +95,18 @@ class Dot11ReassoReq < Packet
   flags       :capabilities, 16, "Capabilities", :spec => $capability_list
   hex_octets  :current_ap, 48, "Current AP" # ETHER_ANY?? check scapy.py
   unsigned    :listen_interval, 16, "Listen Interval", :endian => :little, :default => 0x00C8
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
 
 
 class Dot11ReassoResp < Dot11AssoResp
   name        "802.11 Reassociation Response"
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
 
 class Dot11ProbeReq < Packet
   name        "802.11 Probe Request"
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
     
 class Dot11ProbeResp < Packet
@@ -121,6 +115,7 @@ class Dot11ProbeResp < Packet
   unsigned    :timestamp, 64, "Timestamp", :endian => :little
   unsigned    :beacon_interval, 16, "Beacon Interval", :endian => :little, :default => 0x0064 # I think that default is what scapy means... should check it, but not really important
   flags       :capabilities, 16, "Capabilities", :spec => $capability_list # Defined above
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
     
 class Dot11Auth < Packet
@@ -129,6 +124,7 @@ class Dot11Auth < Packet
   enum        :algo, 16, "Algorithm", :endian => :little, :spec => ["open", "sharedkey"]
   unsigned    :seqnum, 16, "Sequence Number", :endian => :little
   enum        :status, 16, "Status Code", :endian => :little, :spec => $status_code
+  nest        :elt,       nil, "Nested", :nested_class => Dot11Elt
 end
 
 class Dot11Deauth < Packet
@@ -147,27 +143,6 @@ class Dot11WEP < Packet
   
   # Do WEP-specific magic here
 end
-
-
-
-
-a = Dot11.new
-b = Dot11Deauth.new
-
-p a.length
-p b.length
-
-c = a / b
-
-p c.length
-
-
-
-
-
-
-
-
 
 class PrismHeader < Packet
   name        "Prism header"

@@ -7,8 +7,12 @@ class Packet
       
       length_bit = offset_bit + length(instance)
       length_byte = (length_bit / 8.0).ceil
-      
+            
       last_byte = offset_byte + length_byte - 1
+
+      if offset_byte + length_byte > buffer.length
+        return options[:default] || options["default"] || nil
+      end
       
       divisor = options[:fixed] || options["fixed"]
       divisor_f = divisor && divisor.to_f
