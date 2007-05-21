@@ -2,10 +2,12 @@ class Packet
   class NestedField < Field
     def get(instance, buffer)
       offset_byte = offset(instance) / 8
-      length_byte = length(instance) / 8
-      last_byte = offset_byte + length_byte - 1
-      byte_range = offset_byte..last_byte
-
+      byte_range = offset_byte..-1
+      
+      if offset_byte >= buffer.length
+        return options[:default] || options["default"] || nil
+      end
+      
       nested_class = nested_class(instance)
 
       if nested_class != nil
@@ -25,10 +27,9 @@ class Packet
     end
     
     def length(instance)
-      nested_class = nested_class(instance)
+      nested = instance.send(:get_field_value, name)
       
-      if nested_class != nil
-        nested = nested_class.new()
+      if nested != nil
         nested.length * 8
       else
         0

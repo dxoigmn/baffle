@@ -10,7 +10,7 @@ class Packet
         return options[:default] || options["default"] || nil
       end
       
-      instance[byte_range].to_s
+      buffer[byte_range].to_s
     end
     
     def set(instance, buffer, value)

@@ -11,7 +11,7 @@ class Packet
         return options[:default] || options["default"] || nil
       end
       
-      instance[byte_range].sub(/\0*$/, "").to_s
+      buffer[byte_range].sub(/\0*$/, "").to_s
     end
     
     def set(instance, buffer, value)
@@ -25,7 +25,7 @@ class Packet
       if val.length < length_byte
         val += "\0" * (length_byte - val.length)
       end
-      instance[byte_range] = val[val_byte_range]
+      buffer[byte_range] = val[val_byte_range]
     end
   end
   

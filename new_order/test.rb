@@ -36,7 +36,21 @@ ds.id           = 3
 ds.info_length  = 1
 ds.info         = 0x0b.chr
 
-(packet/beacon/ssid/rates/ds).data.each_byte do |byte|
+data = (packet/beacon/ssid/rates/ds).data
+
+data.each_byte do |byte|
   print byte.to_s(16), " "
 end
 puts " "
+
+packet = Dot11.new(data)
+packet.data.each_byte do |byte|
+  print byte.to_s(16), " "
+end
+puts " "
+
+if packet.data == data
+  puts "PASSED!"
+else
+  puts "FAILED!"
+end

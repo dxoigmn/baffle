@@ -29,12 +29,15 @@ class Packet
     
     duplicate = dup
     
+    # Find nested field that is not yet filled in.
     nested = duplicate
     
     while nested.send(:get_field_value, nested.class.nested_field.name) != nil
       nested = nested.send(:get_field_value, nested.class.nested_field.name)
+      raise "Packet cannot contain a nested field." if nested.class.nested_field == nil
     end
     
+    # Fill in the nested field.
     nested.send(:set_field_value, nested.class.nested_field.name, other)
     
     duplicate
@@ -72,12 +75,12 @@ class Packet
   
   def dissect(buffer)
     self.class.fields.each do |field|
-      if field.kind_of?(NestedField)
-        next if get_field_value(field.name) == nil
-      end
-      
       value = field.get(self, buffer)
-      set_field_value(field.name, value)
+      
+      if (!field.kind_of?(NestedField)) || 
+         (field.kind_of?(NestedField) && value != nil)
+        set_field_value(field.name, value)
+      end
     end
   end
  
