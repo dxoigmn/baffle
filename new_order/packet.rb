@@ -19,9 +19,16 @@ class Packet
     dissect(str)
   end
   
-  def initialize(data="")
+  def initialize(value = nil)
     @field_values = {}
-    self.data = data
+
+    if value.kind_of? Hash
+      value.each do |field, value|
+        send "#{field}=", value
+      end
+    else
+      self.data = value
+    end
   end
   
   def /(other)
@@ -74,6 +81,8 @@ class Packet
   end
   
   def dissect(buffer)
+    buffer ||= ""
+    
     self.class.fields.each do |field|
       value = field.get(self, buffer)
       
