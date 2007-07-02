@@ -4,17 +4,17 @@ require 'packet'
 class Dot11 < Packet
   name        "802.11" # For pretty printing
   
-  unsigned    :subtype,   4,  'Subtype'
-  enum        :type,      2,  'Type',       :spec => ['Management', 'Control', 'Data', 'Reserved']
-  unsigned    :proto,     2,  'Protocol'
-  flags       :fc,        8,  'Frame Control', :spec => ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
-  unsigned    :id,        16, 'ID'
-  hex_octets  :addr1,     48, 'Address 1'
-  hex_octets  :addr2,     48, 'Address 2',  :applicable => proc {|instance| if instance.type == 1 then [0x0B, 0x0A, 0x0E, 0x0F].include?(instance.subtype) else true end}
-  hex_octets  :addr3,     48, 'Address 3',  :applicable => proc {|instance| [0, 2].include?(instance.type)}
-  unsigned    :sc,        16, 'SC',         :endian => :little, :applicable => proc {|instance| instance.type != 1}
-  hex_octets  :addr4,     48, 'Address 4',  :applicable => proc {|instance| instance.type == 2 && (instance.fc & 0x3 == 0x3)}
-  nest        :frame,    nil, 'Payload',    :nested_class => proc {|instance|
+  unsigned    :subtype, 4,    'Subtype'
+  enum        :type,    2,    'Type',       :spec => ['Management', 'Control', 'Data', 'Reserved']
+  unsigned    :proto,   2,    'Protocol'
+  flags       :fc,      8,    'Frame Control', :spec => ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
+  unsigned    :id,      16,   'ID'
+  hex_octets  :addr1,   48,   'Address 1'
+  hex_octets  :addr2,   48,   'Address 2',  :applicable => proc {|instance| if instance.type == 1 then [0x0B, 0x0A, 0x0E, 0x0F].include?(instance.subtype) else true end}
+  hex_octets  :addr3,   48,   'Address 3',  :applicable => proc {|instance| [0, 2].include?(instance.type)}
+  unsigned    :sc,      16,   'SC',         :endian => :little, :applicable => proc {|instance| instance.type != 1}
+  hex_octets  :addr4,   48,   'Address 4',  :applicable => proc {|instance| instance.type == 2 && (instance.fc & 0x3 == 0x3)}
+  nest        :frame,   nil,  'Payload',    :nested_class => proc {|instance|
     #puts "instance.fc = #{instance.fc.inspect}"
     if instance.fc & 0x40 == 0x40
       Dot11WEP
