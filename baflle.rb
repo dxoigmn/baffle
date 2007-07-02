@@ -1,4 +1,4 @@
-$: << "." << "new_order"
+  $: << "." << "new_order"
 require "capture"
 require "packetset"
 require "new_order/dot11"
