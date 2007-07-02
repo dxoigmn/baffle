@@ -6,39 +6,16 @@ require "thread"
 require "Lorcon"
 require "timeout"
 
+# TODO, these should be customizable outside of baflle. We want to turn baflle into a gem eventually.
 INTERFACE = "ath0"
 DRIVER = "madwifing"
-
-#  require 'thread'
-#
-#  queue = Queue.new
-#
-#  producer = Thread.new do
-#    5.times do |i|
-#      sleep rand(i) # simulate expense
-#      queue << i
-#      puts "#{i} produced"
-#    end
-#  end
-#
-#  consumer = Thread.new do
-#    5.times do |i|
-#      value = queue.pop
-#      sleep rand(i/2) # simulate expense
-#      puts "consumed #{value}"
-#    end
-#  end
-#
-#  consumer.join
 
 class CaptureQueue < Queue
   def initialize(device)
     super()
     @capture = false
     @thread = Thread.new do
-      params = { :device => device }
-      
-      Capture.open(params) do |capture|
+      Capture.open(device) do |capture|
         capture.each do |pkt|
           if @capture
             self.push pkt
@@ -117,10 +94,9 @@ module Baflle
     
     capture.stop
 
-    # Process packet
+    # Evaluate next rule/proc
     next_rule = response != nil ? rule[:pass] : rule[:fail]
   
-    # Evaluate next rule/proc
     case next_rule
       when Symbol
         eval_rule device, capture, @rules[next_rule]  # TODO: Check for nil
