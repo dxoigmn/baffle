@@ -1,4 +1,3 @@
-$: << "."
 require 'packet'
 
 class Dot11 < Packet

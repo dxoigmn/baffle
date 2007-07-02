@@ -1,4 +1,4 @@
-$: << "." << "new_order"
+$: << "new_order"
 require "Lorcon"
 require "new_order/dot11"
 
