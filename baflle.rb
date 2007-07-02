@@ -67,8 +67,13 @@ module Baflle
   def eval(name)
     device = Lorcon::Device.new(INTERFACE, DRIVER, 1)
     capture = CaptureQueue.new(INTERFACE)
-    rule = @rules[name]
-
+    
+    eval_rule device, capture, @rules[name]
+  end
+  
+  private
+  
+  def eval_rule(device, capture, rule)
     case rule[:send]
       when PacketSet
         return_values = []
@@ -76,18 +81,16 @@ module Baflle
         rule[:send].each do |params|
           packet_class = params[:class]
           params.delete :class
-          return_values << eval_rule(device, capture, rule, packet_class.new(params))
+          return_values << eval_packet(device, capture, rule, packet_class.new(params))
         end
         
         return return_values
       when Packet
-        return eval_rule(device, capture, rule, rule[:send])
+        return eval_packet(device, capture, rule, rule[:send])
     end
   end
   
-  private
-  
-  def eval_rule(device, capture, rule, packet)
+  def eval_packet(device, capture, rule, packet)
     # Send packet
     device.write(packet.data, 1, 0)
     capture.start
@@ -102,9 +105,9 @@ module Baflle
           
           case rule[:expect]
             when PacketSet
-              response == nil if !rule[:expect].include?(response)
+              response = nil if !rule[:expect].include?(response)
             when Packet
-              response == nil if response != rule[:expect]
+              response = nil if response != rule[:expect]
           end
         end
       end
@@ -113,14 +116,14 @@ module Baflle
     end
     
     capture.stop
-    
+
     # Process packet
     next_rule = response != nil ? rule[:pass] : rule[:fail]
   
     # Evaluate next rule/proc
     case next_rule
       when Symbol
-        eval_rule @rules[next_rule]  # TODO: Check for nil
+        eval_rule device, capture, @rules[next_rule]  # TODO: Check for nil
       when String
         return next_rule
       when Proc
