@@ -15,6 +15,3 @@ add_rule :rule2,
          :timeout => 5
 
 puts eval(:rule1)
-
-
-# expect <= if PacketSet, assume ruby filtering, if String assume tcpdump filter

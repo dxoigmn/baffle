@@ -112,6 +112,8 @@ module Baflle
       response = nil
     end
     
+    capture.stop
+    
     # Process packet
     next_rule = response != nil ? rule[:pass] : rule[:fail]
   
