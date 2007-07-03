@@ -1,10 +1,14 @@
 class PacketSet
   Pair = Struct.new(:name, :value)
   
-  def initialize(*parameters)
+  attr_accessor :packet_class
+  
+  def initialize(klass, parameters)
     @fields = []
 
-    parameters[0].each_pair do |key, value|
+    @packet_class = klass
+
+    parameters.each_pair do |key, value|
       @fields << Pair.new(key, value)
     end
         
@@ -23,7 +27,7 @@ class PacketSet
   def [](index)          
     indices = @field_sizes.inject([]) do |accumulator, size|
       remainder = index % size 
-      index /= size #/      
+      index /= size # yeah textmate isn't perfect and that's why I need this slash: /      
       accumulator << remainder
     end
     
@@ -53,4 +57,23 @@ class PacketSet
     
     false
   end
+  
+  def to_filter
+    filter = ""
+    
+    @fields.each do |field|
+      packet_field = @packet_class.field(field.name)
+      
+      p packet_field.offset()
+    end
+    
+    filter
+  end
 end
+
+$: << "new_order"
+require "dot11"
+
+a = PacketSet.new(Dot11, :type => [0, 2])
+
+p a.to_filter

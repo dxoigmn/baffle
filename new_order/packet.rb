@@ -179,3 +179,4 @@ class Raw < Packet
   name "Raw Data"
 end
 
+# TODO: add thing to combine all applicable combinations and enumerate them
