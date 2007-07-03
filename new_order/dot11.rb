@@ -139,9 +139,8 @@ class Dot11WEP < Packet
     
   char        :iv, 24, "Initialization Vector"
   unsigned    :keyid, 8, "Key ID"
-  text        :wepdata, "WEP Data" # Check scapy.py
-  unsigned    :icv, 32, "ICV"
-  
+  text        :wepdata, proc { |instance| instance.length - (24 / 8) - (8 / 8) - (32 / 8)},"WEP Data" # Check scapy.py
+  unsigned    :icv, 32, "ICV"  
   # Do WEP-specific magic here
 end
 

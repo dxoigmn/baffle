@@ -9,25 +9,27 @@ require "timeout"
 class CaptureQueue < Queue
   def initialize(device)
     super()
-    @capture = false
+    @sniff = false
+    @capture = nil
     @thread = Thread.new do
-      Capture.open(device) do |capture|
-        capture.each do |pkt|
-          if @capture
-            self.push pkt
-          end
-        end
+      @capture = Capture.open(device)
+      @capture.setdissector do |data| Dot11.new(data) end
+      @capture.each do |pkt|
+        puts pkt.inspect if @sniff
+        self.push(pkt) if @sniff
       end
     end
   end
   
-  def start
+  def start(filter = "")
     self.clear
-    @capture = true
+    
+    @capture.filter = filter
+    @sniff = true
   end
   
   def stop
-    @capture = false
+    @sniff = false
   end
 end
 
@@ -68,7 +70,7 @@ module Baflle
     device.write(packet.data, 1, 0)
     
     # Wait for response, timing out as necessary
-    capture.start
+    capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
     response = nil
     
     begin
@@ -76,12 +78,24 @@ module Baflle
         # Loop until we receive an acceptable response.
         while response == nil
           response = capture.pop
+
+          #puts "sent     = #{packet.inspect}"
+          #puts "         = #{pretty_print(packet.data)}"
+          #puts "expect   = #{rule[:expect].inspect}"
+          #puts "         = #{pretty_print(rule[:expect].data)}"
+          #puts "response = #{response.inspect}"
+          #puts "         = #{pretty_print(response.data)}"
+          #puts "data     = #{pretty_print(data.inspect)}"
           
-          case rule[:expect]
-            when PacketSet
+          case true
+            when rule[:expect].respond_to?(:include?)
               response = nil if !rule[:expect].include?(response)
-            when Packet
+            when rule[:expect].kind_of?(Packet)
               response = nil if response != rule[:expect]
+            when rule[:expect].kind_of?(String)
+              break
+            else
+              fail "Bad expect."
           end
         end
       end
@@ -96,12 +110,23 @@ module Baflle
   
     case next_rule
       when Symbol
+        fail "Bad next rule." if !@rules.has_key?(next_rule)
         eval_rule device, capture, @rules[next_rule]
       when String
         return next_rule
       when Proc
         return next_rule.call
+      else
+        fail "Unknown next rule type."
     end
+  end
+  
+  def pretty_print(data)
+    str = ""
+    data.each_byte do |byte|
+      str += byte.to_s(16) + " "
+    end
+    str
   end
 end
 
