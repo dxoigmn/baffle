@@ -6,10 +6,6 @@ require "thread"
 require "Lorcon"
 require "timeout"
 
-# TODO, these should be customizable outside of baflle. We want to turn baflle into a gem eventually.
-INTERFACE = "ath0"
-DRIVER = "madwifing"
-
 class CaptureQueue < Queue
   def initialize(device)
     super()
@@ -41,9 +37,9 @@ module Baflle
     @rules[name] = args
   end
   
-  def eval(name)
-    device = Lorcon::Device.new(INTERFACE, DRIVER, 1)
-    capture = CaptureQueue.new(INTERFACE)
+  def eval(interface, driver, name)
+    device = Lorcon::Device.new(interface, driver, 1)
+    capture = CaptureQueue.new(interface)
     
     eval_rule device, capture, @rules[name]
   end
@@ -70,13 +66,14 @@ module Baflle
   def eval_packet(device, capture, rule, packet)
     # Send packet
     device.write(packet.data, 1, 0)
-    capture.start
     
     # Wait for response, timing out as necessary
+    capture.start
     response = nil
     
     begin
       Timeout::timeout(rule[:timeout] || 10) do
+        # Loop until we receive an acceptable response.
         while response == nil
           response = capture.pop
           
@@ -95,11 +92,11 @@ module Baflle
     capture.stop
 
     # Evaluate next rule/proc
-    next_rule = response != nil ? rule[:pass] : rule[:fail]
+    next_rule = (response != nil) ? rule[:pass] : rule[:fail]
   
     case next_rule
       when Symbol
-        eval_rule device, capture, @rules[next_rule]  # TODO: Check for nil
+        eval_rule device, capture, @rules[next_rule]
       when String
         return next_rule
       when Proc

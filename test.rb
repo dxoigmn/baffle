@@ -2,16 +2,14 @@ require "baflle"
 
 add_rule :rule1,
          :send => PacketSet.new(:class => Dot11),
-         :expect => PacketSet.new(:class => Dot11), # or string bpf filter!
+         :expect => PacketSet.new(:class => Dot11),
          :pass => "Linksys",
-         :fail => :rule2,  # timeout, or not match packet
-         :timeout => 5
+         :fail => :rule2
 
 add_rule :rule2,
          :send => PacketSet.new(:class => Dot11),
-         :expect => PacketSet.new(:class => Dot11), # of string bpf filter
+         :expect => PacketSet.new(:class => Dot11),
          :pass => "Aruba",
-         :fail => "Unknown",
-         :timeout => 5
+         :fail => "Unknown"
 
-puts eval(:rule1)
+puts eval("ath0", "madwifing", :rule1)
