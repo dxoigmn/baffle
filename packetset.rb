@@ -13,7 +13,7 @@ class PacketSet
     end
         
     @field_sizes = @fields.map do |field|
-      if field.value.respond_to?(:size)
+      if field.value.respond_to?(:size) && !(field.value.kind_of?(String) || field.value.kind_of?(Numeric))
         field.value.size
       elsif field.value.respond_to?(:entries)
         field.value.entries.size
@@ -31,13 +31,19 @@ class PacketSet
       accumulator << remainder
     end
     
-    hash = {}
+    out = @packet_class.new
     
     indices.each_with_index do |index, i|
-      hash[@fields[i].name] = @fields[i].value.entries[index]
+      value = @fields[i].value
+      
+      if value.kind_of?(Array) or value.kind_of?(Range)
+        out.send((@fields[i].name.to_s + "=").intern, @fields[i].value.entries[index])
+      else
+        out.send((@fields[i].name.to_s + "=").intern, @fields[i].value)
+      end
     end
     
-    hash
+    out
   end
   
   def size
@@ -51,6 +57,7 @@ class PacketSet
   end
 
   def include?(packet)
+    # This is horrrrrribly inefficient.
     each do |pkt|
       return true if packet == pkt
     end
@@ -59,6 +66,8 @@ class PacketSet
   end
   
   def to_filter
+    raise "Not implemented: to_filter"
+    
     filter = ""
     
     @fields.each do |field|
@@ -74,6 +83,8 @@ end
 $: << "new_order"
 require "dot11"
 
-a = PacketSet.new(Dot11, :type => [0, 2])
+a = PacketSet.new(Dot11, :type => [0, 2], :subtype => 0..2, :addr1 => 5)
 
-p a.to_filter
+a.each do |packet|
+  p packet
+end
