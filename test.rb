@@ -7,8 +7,8 @@ add_rule :rule1,
          :fail => :rule2
 
 add_rule :rule2,
-         :send => PacketSet.new(:class => Dot11),
-         :expect => PacketSet.new(:class => Dot11),
+         :send => PacketSet.new(Dot11),
+         :expect => PacketSet.new(Dot11),
          :pass => "Aruba",
          :fail => "Unknown"
 
