@@ -168,8 +168,13 @@ static VALUE lorcon_driver_write(int argc, VALUE *argv, VALUE self) {
 		}
 	}
 	
-	in_packet.packet = StringValuePtr(rbbuff);
-	in_packet.plen = RSTRING(rbbuff)->len;
+	if (rb_respond_to(rbbuff, rb_intern("to_s"))) {
+    rbbuff = rb_funcall(rbbuff, rb_intern("to_s"), 0);
+  	in_packet.packet = StringValuePtr(rbbuff);
+	  in_packet.plen = RSTRING(rbbuff)->len;
+  } else {
+    rb_raise(rb_eArgError, "Buffer must respond to to_s");
+  }
 
 	for (; cnt > 0; cnt--) {
 		ret = tx80211_txpacket(in_tx, &in_packet);

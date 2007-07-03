@@ -15,6 +15,8 @@ class Packet
     construct
   end
   
+  alias to_s data
+  
   def data=(str)
     dissect(str)
   end

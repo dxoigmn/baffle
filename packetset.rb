@@ -79,12 +79,3 @@ class PacketSet
     filter
   end
 end
-
-$: << "new_order"
-require "dot11"
-
-a = PacketSet.new(Dot11, :type => [0, 2], :subtype => 0..2, :addr1 => 5)
-
-a.each do |packet|
-  p packet
-end

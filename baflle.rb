@@ -11,17 +11,22 @@ class CaptureQueue < Queue
     super()
     @sniff = false
     @capture = nil
+    @mutex = Mutex.new
+    @mutex.lock
     @thread = Thread.new do
       @capture = Capture.open(device)
+      @mutex.unlock
       @capture.setdissector do |data| Dot11.new(data) end
       @capture.each do |pkt|
-        puts pkt.inspect if @sniff
+        #puts pkt.inspect if @sniff
         self.push(pkt) if @sniff
       end
     end
   end
   
   def start(filter = "")
+    @mutex.lock
+    @mutex.unlock
     self.clear
     
     @capture.filter = filter
@@ -51,12 +56,12 @@ module Baflle
   def eval_rule(device, capture, rule)
     case rule[:send]
       when PacketSet
+        # Here we are assuming that we want a response for each packet from a packetset, in contrast to
+        # having a single response to a set of packets.
         return_values = []
         
-        rule[:send].each do |params|
-          packet_class = params[:class]
-          params.delete :class
-          return_values << eval_packet(device, capture, rule, packet_class.new(params))
+        rule[:send].each do |packet|
+          return_values << eval_packet(device, capture, rule, packet)
         end
         
         return return_values
@@ -67,7 +72,7 @@ module Baflle
   
   def eval_packet(device, capture, rule, packet)
     # Send packet
-    device.write(packet.data, 1, 0)
+    device.write(packet, 1, 0)
     
     # Wait for response, timing out as necessary
     capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
