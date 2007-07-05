@@ -2,6 +2,7 @@ $: << "new_order"
 require "capture"
 require "packetset"
 require "new_order/dot11"
+require "new_order/radiotap"
 require "thread"
 require "Lorcon"
 require "timeout"
@@ -16,9 +17,7 @@ class CaptureQueue < Queue
     @thread = Thread.new do
       @capture = Capture.open(device)
       @mutex.unlock
-      @capture.setdissector do |data| Dot11.new(data) end
       @capture.each do |pkt|
-        #puts pkt.inspect if @sniff
         self.push(pkt) if @sniff
       end
     end
@@ -26,15 +25,22 @@ class CaptureQueue < Queue
   
   def start(filter = "")
     @mutex.lock
-    @mutex.unlock
     self.clear
-    
+
     @capture.filter = filter
     @sniff = true
+    @mutex.unlock
   end
   
   def stop
     @sniff = false
+  end
+  
+  def pop
+    @mutex.lock
+    ret = super
+    @mutex.unlock
+    ret
   end
 end
 
@@ -54,6 +60,7 @@ module Baflle
   private
   
   def eval_rule(device, capture, rule)
+    # TODO: We probably want the response data returned as well.
     case rule[:send]
       when PacketSet
         # Here we are assuming that we want a response for each packet from a packetset, in contrast to
@@ -71,36 +78,36 @@ module Baflle
   end
   
   def eval_packet(device, capture, rule, packet)
+    # Start capture
+    capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
+    
     # Send packet
     device.write(packet, 1, 0)
     
     # Wait for response, timing out as necessary
-    capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
     response = nil
     
     begin
-      Timeout::timeout(rule[:timeout] || 10) do
+      Timeout::timeout(rule[:timeout] || 100) do
         # Loop until we receive an acceptable response.
         while response == nil
-          response = capture.pop
-
-          #puts "sent     = #{packet.inspect}"
-          #puts "         = #{pretty_print(packet.data)}"
-          #puts "expect   = #{rule[:expect].inspect}"
-          #puts "         = #{pretty_print(rule[:expect].data)}"
-          #puts "response = #{response.inspect}"
-          #puts "         = #{pretty_print(response.data)}"
-          #puts "data     = #{pretty_print(data.inspect)}"
+          raw = capture.pop[0..-5]
+          response = Radiotap.new(raw).frame
+          expect = rule[:expect]
           
           case true
-            when rule[:expect].respond_to?(:include?)
-              response = nil if !rule[:expect].include?(response)
-            when rule[:expect].kind_of?(Packet)
-              response = nil if response != rule[:expect]
-            when rule[:expect].kind_of?(String)
+            when expect.kind_of?(Packet)
+              expect.field_values.each do |name, value|
+                response_value = response.send(name)
+                response = nil if response_value != value
+                break if response_value != value
+              end
+            when expect.kind_of?(String)
               break
+            when expect.respond_to?(:include?)
+              response = nil if !expect.include?(response)
             else
-              fail "Bad expect."
+              fail "Bad expect type."
           end
         end
       end
@@ -120,7 +127,7 @@ module Baflle
       when String
         return next_rule
       when Proc
-        return next_rule.call
+        return next_rule[response]
       else
         fail "Unknown next rule type."
     end

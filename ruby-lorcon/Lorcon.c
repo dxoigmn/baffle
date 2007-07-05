@@ -97,7 +97,7 @@ static VALUE lorcon_driver_open(int argc, VALUE *argv, VALUE self) {
 	 *other than atheros with madwifi-old 
 	 */
 	//ret = tx80211_setmode(in_tx, IW_MODE_MONITOR); 
-	ret = tx80211_setfunctionalmode(in_tx, TX80211_FUNCMODE_INJECT);
+	ret = tx80211_setfunctionalmode(in_tx, TX80211_FUNCMODE_INJMON);
 	if (ret != 0) {
 		//rb_raise(rb_eRuntimeError, "Lorcon could not place the card into monitor mode");
 		rb_raise(rb_eRuntimeError, "Lorcon could not place the card into injection + monitor mode");

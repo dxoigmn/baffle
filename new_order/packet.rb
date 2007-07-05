@@ -22,6 +22,7 @@ class Packet
   end
   
   def initialize(value = nil)
+    #puts "value.length  = #{value.length}"
     @field_values = {}
 
     if value.kind_of? Hash
@@ -51,16 +52,23 @@ class Packet
     
     duplicate
   end
+    
+  def field_values
+    @field_values
+  end
   
   private
   
   def construct
     buffer = ""
     
-    self.class.fields.each do |field|    
+    #puts "Constructing #{self.class}"
+    
+    self.class.fields.each do |field|
       next if !field.applicable?(self)
       
       if field.kind_of?(NestedField)
+        #puts "Skipping nested field."
         next if get_field_value(field.name) == nil
       end
       
@@ -85,8 +93,13 @@ class Packet
   def dissect(buffer)
     buffer ||= ""
     
+    #puts "#{self.class}: Dissecting #{buffer.length} bytes in buffer."
+    #puts pretty_print(buffer)
+
     self.class.fields.each do |field|
+      
       value = field.get(self, buffer)
+      #puts "#{self.class}: Trying to get data for #{field.name} => #{value.inspect}"
       
       if (!field.kind_of?(NestedField)) || 
          (field.kind_of?(NestedField) && value != nil)
@@ -120,7 +133,7 @@ class Packet
       raise NoMethodError.new("undefined method #{name.id2name} on #{self.class.pretty_name}")
     end
   end
-  
+
   class << self
     attr_accessor :pretty_name
     attr_accessor :nested_field

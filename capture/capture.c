@@ -14,7 +14,7 @@
 #include "rubysig.h"
 
 #define DEFAULT_DATALINK	DLT_EN10MB
-#define DEFAULT_SNAPLEN	68
+#define DEFAULT_SNAPLEN	256
 #define DEFAULT_PROMISC	1
 #define DEFAULT_TO_MS	1000
 static char pcap_errbuf[PCAP_ERRBUF_SIZE];
