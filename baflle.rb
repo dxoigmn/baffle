@@ -91,19 +91,14 @@ module Baflle
       Timeout::timeout(rule[:timeout] || 100) do
         # Loop until we receive an acceptable response.
         while response == nil
-          raw = capture.pop[0..-5]
-          response = Radiotap.new(raw).frame
+          response = Radiotap.new(capture.pop[0..-5]).frame
           expect = rule[:expect]
           
           case true
             when expect.kind_of?(Packet)
-              expect.field_values.each do |name, value|
-                response_value = response.send(name)
-                response = nil if response_value != value
-                break if response_value != value
-              end
+              response = nil unless response =~ expect
             when expect.kind_of?(String)
-              break
+              break # First packet captured is good because of tcpdump filter.
             when expect.respond_to?(:include?)
               response = nil if !expect.include?(response)
             else
@@ -136,7 +131,7 @@ module Baflle
   def pretty_print(data)
     str = ""
     data.each_byte do |byte|
-      str += byte.to_s(16) + " "
+      str += ("0" + byte.to_s(16))[-2,2] + " "
     end
     str
   end

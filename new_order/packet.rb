@@ -35,30 +35,53 @@ class Packet
   end
   
   def /(other)
-    raise "Packet cannot contain a nested field." if self.class.nested_field == nil
+    fail "Packet cannot contain a nested field." if self.class.nested_field == nil
     
     duplicate = dup
     
     # Find nested field that is not yet filled in.
-    nested = duplicate
-    
-    while nested.send(:get_field_value, nested.class.nested_field.name) != nil
-      nested = nested.send(:get_field_value, nested.class.nested_field.name)
-      raise "Packet cannot contain a nested field." if nested.class.nested_field == nil
-    end
+    unnested = duplicate
+    unnested = unnested.nested until unnested.nested == nil
     
     # Fill in the nested field.
-    nested.send(:set_field_value, nested.class.nested_field.name, other)
+    unnested.nested = other
     
     duplicate
   end
-    
+  
   def field_values
     @field_values
   end
   
-  private
+  def =~(packet)
+    return true if packet == nil  
+    return false if self.class != packet.class
   
+    # Make sure all packet values are equal to our values.
+    packet.field_values.each do |name, value|
+      my_value = self.send(name)
+      return false if my_value != value
+    end
+    
+    # Make sure all nested values are equal to our nested values (recurse).
+    #puts "Evaluating nested values for #{nested.class} vs #{packet.nested}."
+    nested =~ packet.nested
+  end
+  
+  def nested
+    return nil if self.class.nested_field == nil
+    
+    get_field_value self.class.nested_field.name
+  end
+  
+  def nested=(value)
+    fail "Packet cannot contain a nested field." if self.class.nested_field == nil
+    
+    set_field_value self.class.nested_field.name, value
+  end
+  
+  private
+    
   def construct
     buffer = ""
     
@@ -83,7 +106,7 @@ class Packet
       field.set(self, buffer, value) if value
     end
 
-    if @nested_field    
+    if @nested_field
       buffer << @nested_field.data
     end
     
@@ -170,7 +193,7 @@ class Packet
       field = field_class.new(self, name, options)
       
       if field_class == NestedField
-        # TODO: Throw exception if nested field is already set! (i.e. only allow 1 nested field)
+        fail "Only one nested field allowed." if @nested_field != nil
         @nested_field = field
       end
       
