@@ -82,6 +82,7 @@ class Packet
     fail "Packet #{self.class} cannot contain a nested field." if self.class.nested_field == nil
     
     if self.class.nested_field.kind_of? ArrayField
+      
       set_field_value self.class.nested_field.name, (nested << value)
     else
       set_field_value self.class.nested_field.name, value
@@ -128,7 +129,7 @@ class Packet
     #puts pretty_print(buffer)
 
     self.class.fields.each do |field|
-      
+      next if !field.applicable?(self)
       value = field.get(self, buffer)
       #puts "#{self.class}: Trying to get data for #{field.name} => #{value.inspect}"
       
@@ -144,6 +145,7 @@ class Packet
   end
   
   def set_field_value(field_name, value)
+    puts "setting #{field_name} = #{value.inspect}" if field_name == :addr4
     @field_values[field_name] = value
   end
 

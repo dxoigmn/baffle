@@ -1,12 +1,14 @@
 require "packet"
 require "dot11"
 #require "profile"
+require "pp"
 
 def test(klass, raw, packet, test_desc)
   dissector = (klass.new(raw).==(packet))
   builder = (packet.data == raw)
   
   pp klass.new(raw)
+  pp packet
   
   puts "#{klass} dissector #{dissector ? 'passed' : 'failed'} on #{test_desc}"
   puts "#{klass} builder #{builder ? 'passed' : 'failed'} on #{test_desc}"
