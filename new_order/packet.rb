@@ -22,7 +22,6 @@ class Packet
   end
   
   def initialize(value = nil)
-    #puts "value.length  = #{value.length}"
     @field_values = {}
 
     if value.kind_of? Hash
@@ -52,7 +51,8 @@ class Packet
   def field_values
     @field_values
   end
-  
+
+  # FIXME: There is an logical in this code. Elts can be reordered and thus we should account for that.  
   def =~(packet)
     return true if packet == nil  
     return false if self.class != packet.class
@@ -187,7 +187,6 @@ class Packet
 
     def add_field(name, length, options = {})
       field_class = options[:field_class]
-      
       options[:length] = length
       
       field = field_class.new(self, name, options)
@@ -205,7 +204,7 @@ class Packet
     def parse_options(array, default_name, default_field_class)
       options = array.grep(Hash).first || {}
 
-      options[:display_name] = array.grep(String).first || default_name
+      options[:display_name] = (array.grep(String).first || default_name).to_s
       options[:field_class] = array.grep(Class).first || default_field_class
 
       options

@@ -2,8 +2,8 @@ require "baflle"
 
 probe_request = Dot11.new(:subtype => 0x4,
                           :type =>    0x0,
-                          :proto =>   0x0,
-                          :fc =>      0x00,
+                          :version => 0x0,
+                          :flags =>   0x00,
                           :id =>      0x0000,
                           :addr1 =>   "ff:ff:ff:ff:ff:ff",
                           :addr2 =>   "ba:aa:ad:f0:00:0d",
