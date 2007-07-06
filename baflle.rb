@@ -113,18 +113,18 @@ module Baflle
     capture.stop
 
     # Evaluate next rule/proc
-    next_rule = (response != nil) ? rule[:pass] : rule[:fail]
-  
-    case next_rule
+    process_next_rule ((response != nil) ? rule[:pass] : rule[:fail]), response, device, capture
+  end
+
+  def process_next_rule(rule, response, device, capture)
+    case rule
       when Symbol
-        fail "Bad next rule." if !@rules.has_key?(next_rule)
-        eval_rule device, capture, @rules[next_rule]
-      when String
-        return next_rule
+        fail "Bad next rule." if !@rules.has_key?(rule)
+        eval_rule device, capture, @rules[rule]
       when Proc
-        return next_rule[response]
+        process_next_rule rule[response], response, device, capture
       else
-        fail "Unknown next rule type."
+        return rule
     end
   end
   

@@ -205,8 +205,3 @@ class PrismHeader < Packet
                     ]
 =end                    
 end
-
-
-require "pp"
-
-Dot11.build_rule_tree
