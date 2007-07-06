@@ -88,6 +88,19 @@ class Packet
       set_field_value self.class.nested_field.name, value
     end
   end
+
+  def ==(other)
+    return false if self.class != other.class
+      
+    self.class.fields.each do |field|
+      self_value = self.send(:get_field_value, field.name) || ""
+      other_value = other.send(:get_field_value, field.name) || ""
+      
+      return false if self_value != other_value
+    end
+    
+    return true
+  end
   
   private
     
@@ -219,11 +232,71 @@ class Packet
 
       options
     end
+    
+    def build_rule_tree
+      simplified_rules = simplify_rules
+      
+      
+    end
+    
+    def simplify_rules
+      simplified_rules = {}
+      
+      @fields.each do |field|
+        if field.has_applicable?
+          simplified_rules[field] = simplify_rule(field.applicable)
+          p simplified_rules[field]
+        end
+      end      
+      
+      simplified_rules
+    end
+    
+    def simplify_rule(rule, explicit = false)
+      if rule.kind_of?(Hash)
+        simple_rule = []
+        base_rule = simple_rule
+        
+        rule.each_pair do |key, value|
+          if value.kind_of?(Array)
+            value.each_with_index do |nested_value, index|
+              simple_rule[0] = {key => nested_value}
+              simple_rule[1] = true
+              
+              if index < value.size - 1
+                simple_rule[2] = []
+              else
+                simple_rule[2] = false
+              end
+              
+              simple_rule = simple_rule[2] 
+            end
+          elsif value.kind_of?(Range)  
+            raise "Range not implemented in simplify_rule"
+          else
+            if explicit
+              base_rule = [{key => value}, true, false]
+            else
+              base_rule = {key => value}
+            end
+          end
+        end
+
+        base_rule
+      elsif rule.kind_of?(Array)
+        simplified_condition = simplify_rule(rule[0])
+        
+        simplified_true = simplify_rule(rule[1], true)
+        simplified_false = simplify_rule(rule[2], true)
+                
+        [simplified_condition, simplified_true, simplified_false]
+      elsif rule == true || rule == false
+        rule
+      end
+    end
   end
 end
 
 class Raw < Packet
   name "Raw Data"
 end
-
-# TODO: add thing to combine all applicable combinations and enumerate them

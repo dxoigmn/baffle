@@ -23,9 +23,7 @@ class Dot11 < Packet
         nil, nil, nil, nil, nil, nil, nil ][instance.subtype]
     end
   }
-end
-
-
+end          
 
 $capability_list = [ "res8", "res9", "short-slot", "res11",
                      "res12", "DSSS-OFDM", "res14", "res15",
@@ -207,3 +205,8 @@ class PrismHeader < Packet
                     ]
 =end                    
 end
+
+
+require "pp"
+
+Dot11.build_rule_tree

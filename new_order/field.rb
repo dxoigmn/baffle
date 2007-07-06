@@ -45,6 +45,7 @@ class Packet
     attr_reader :display_name
     attr_reader :default
     attr_reader :format
+    attr_reader :applicable
   
     def initialize(parent, name, options)
       @parent, @name = parent, name
@@ -86,6 +87,10 @@ class Packet
     
     def inspectable?
       true
+    end
+    
+    def has_applicable?
+      return !@applicable.nil?
     end
     
     def applicable?(instance)      
