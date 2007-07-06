@@ -9,6 +9,7 @@ probe_request = Dot11.new(:subtype => 0x4,
                           :addr2 =>   "ba:aa:ad:f0:00:0d",
                           :addr3 =>   "ff:ff:ff:ff:ff:ff",
                           :sc =>      0x0100) /
+                Dot11ProbeReq.new() /
                 Dot11Elt.new(:id =>           0x00,
                              :info_length =>  0x00,
                              :info =>         "") /

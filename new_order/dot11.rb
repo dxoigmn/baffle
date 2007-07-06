@@ -61,7 +61,7 @@ class Dot11Elt < Packet
   enum        :id,          8, :spec => {0 => "SSID", 1 => "Rates", 2 =>  "FHset", 3 => "DSset", 4 => "CFset", 5 => "TIM", 6 => "IBSSset", 16 => "challenge", 42 => "ERPinfo", 47 => "ERPinfo", 48 => "RSNinfo", 50 => "ESRates",221 => "vendor",68 => "reserved"}
   unsigned    :info_length, 8, :default => 0
   char        :info,        proc { |instance| instance.info_length * 8 }
-  nest        :elt,         nil, :nested_class => Dot11Elt
+  #array       :elt,         nil, :nested_class => Dot11Elt
 end
 
 class Dot11Beacon < Packet
@@ -70,7 +70,7 @@ class Dot11Beacon < Packet
   unsigned    :timestamp,       64,   :endian => :little
   unsigned    :beacon_interval, 16,   :endian => :little, :default => 0x0064
   flags       :capabilities,    16,   :spec => $capability_list
-  nest        :elt,             nil,  :nested_class => Dot11Elt
+  array       :elt,             nil,  :nested_class => Dot11Elt
 end
 
 class Dot11ATIM < Packet
@@ -88,7 +88,7 @@ class Dot11AssoReq < Packet
   
   flags       :capabilities,    16,   :spec => $capability_list
   unsigned    :listen_interval, 16,   :endian => :little, :default => 0x00C8
-  nest        :elt,             nil,  :nested_class => Dot11Elt
+  array       :elt,             nil,  :nested_class => Dot11Elt
 end
 
 
@@ -98,7 +98,7 @@ class Dot11AssoResp < Packet
   flags       :capabilities,  16,   :spec => $capability_list
   unsigned    :status,        16,   :endian => :little
   unsigned    :aid,           16,   :endian => :little
-  nest        :elt,           nil,  :nested_class => Dot11Elt
+  array       :elt,           nil,  :nested_class => Dot11Elt
 end
 
 class Dot11ReassoReq < Packet
@@ -107,18 +107,18 @@ class Dot11ReassoReq < Packet
   flags       :capabilities,    16,   :spec => $capability_list
   hex_octets  :current_ap,      48    # ETHER_ANY?? check scapy.py
   unsigned    :listen_interval, 16,   :endian => :little, :default => 0x00C8
-  nest        :elt,             nil,  :nested_class => Dot11Elt
+  array       :elt,             nil,  :nested_class => Dot11Elt
 end
 
 
 class Dot11ReassoResp < Dot11AssoResp
   name        "802.11 Reassociation Response"
-  nest        :elt,       nil,  :nested_class => Dot11Elt
+  array       :elt,       nil,  :nested_class => Dot11Elt
 end
 
 class Dot11ProbeReq < Packet
   name        "802.11 Probe Request"
-  nest        :elt,       nil,  :nested_class => Dot11Elt
+  array       :elt,       nil,  :nested_class => Dot11Elt
 end
     
 class Dot11ProbeResp < Packet
@@ -127,7 +127,7 @@ class Dot11ProbeResp < Packet
   unsigned    :timestamp,       64,   :endian => :little
   unsigned    :beacon_interval, 16,   :endian => :little, :default => 0x0064 # I think that default is what scapy means... should check it, but not really important
   flags       :capabilities,    16,   :spec => $capability_list # Defined above
-  nest        :elt,             nil,  :nested_class => Dot11Elt
+  array       :elt,             nil,  :nested_class => Dot11Elt
 end
     
 class Dot11Auth < Packet
@@ -136,7 +136,7 @@ class Dot11Auth < Packet
   enum        :algo,    16,   :endian => :little, :spec => ["open", "sharedkey"]
   unsigned    :seqnum,  16,   :endian => :little
   enum        :status,  16,   :endian => :little, :spec => $status_code
-  nest        :elt,     nil,  :nested_class => Dot11Elt
+  array       :elt,     nil,  :nested_class => Dot11Elt
 end
 
 class Dot11Deauth < Packet

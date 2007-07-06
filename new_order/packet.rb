@@ -34,14 +34,14 @@ class Packet
   end
   
   def /(other)
-    fail "Packet cannot contain a nested field." if self.class.nested_field == nil
+    fail "Packet #{self.class} cannot contain a nested field." if self.class.nested_field == nil
     
     duplicate = dup
     
     # Find nested field that is not yet filled in.
     unnested = duplicate
-    unnested = unnested.nested until unnested.nested == nil
-    
+    unnested = unnested.nested until unnested.nested.kind_of?(Array) || unnested.nested == nil
+
     # Fill in the nested field.
     unnested.nested = other
     
@@ -70,14 +70,22 @@ class Packet
   
   def nested
     return nil if self.class.nested_field == nil
-    
-    get_field_value self.class.nested_field.name
+
+    if self.class.nested_field.kind_of? ArrayField
+      return get_field_value(self.class.nested_field.name) || []
+    else
+      get_field_value self.class.nested_field.name
+    end
   end
   
   def nested=(value)
-    fail "Packet cannot contain a nested field." if self.class.nested_field == nil
+    fail "Packet #{self.class} cannot contain a nested field." if self.class.nested_field == nil
     
-    set_field_value self.class.nested_field.name, value
+    if self.class.nested_field.kind_of? ArrayField
+      set_field_value self.class.nested_field.name, (nested << value)
+    else
+      set_field_value self.class.nested_field.name, value
+    end
   end
   
   private
@@ -153,7 +161,7 @@ class Packet
         set_field_value(field_name, args[0])
       end
     else
-      raise NoMethodError.new("undefined method #{name.id2name} on #{self.class.pretty_name}")
+      raise NoMethodError.new("undefined method #{name.id2name} on #{self.class}")
     end
   end
 
@@ -190,8 +198,8 @@ class Packet
       options[:length] = length
       
       field = field_class.new(self, name, options)
-      
-      if field_class == NestedField
+
+      if field.kind_of? NestedField
         fail "Only one nested field allowed." if @nested_field != nil
         @nested_field = field
       end

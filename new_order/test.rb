@@ -26,5 +26,3 @@ if packet.data == data
 else
   puts "FAILED!"
 end
-
-puts "type => #{header.type}"

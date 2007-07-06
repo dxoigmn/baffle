@@ -76,7 +76,7 @@ class Packet
     end
     
     def length(instance)
-      if @length.class == Proc
+      if @length.kind_of?(Proc)
         @length[instance]
       else
         @length || 0
