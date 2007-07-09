@@ -17,8 +17,9 @@ probe_request = Dot11.new(:subtype => 0x4,
                              :info_length =>  0x08,
                              :info =>         [0x82, 0x84, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24].pack("c*"))
                              
-probe_response = Dot11.new(:subtype => 0x5,
-                           :addr1 =>   "ba:aa:ad:f0:00:0d")
+probe_response = Dot11.new(:type =>     0x0,
+                           :subtype =>  0x5,
+                           :addr1 =>    "ba:aa:ad:f0:00:0d")
 
 auth_request = Dot11.new(:subtype =>  0xb,
                          :type =>     0x0,
@@ -33,7 +34,8 @@ auth_request = Dot11.new(:subtype =>  0xb,
                              :seqnum => 0x0001,
                              :status => 0x0000)           
               
-auth_response = Dot11.new(:subtype => 0xb,
+auth_response = Dot11.new(:type =>    0x0,
+                          :subtype => 0xb,
                           :addr1 =>   "ba:aa:ad:f0:00:0d")
                           
 assoc_request = Dot11.new(:subtype =>  0x0,
@@ -54,7 +56,8 @@ assoc_request = Dot11.new(:subtype =>  0x0,
                              :info_length =>  0x04,
                              :info =>         [0x02, 0x04, 0x0b, 0x16].pack("c*"))
                              
-assoc_response = Dot11.new(:subtype =>  1,
+assoc_response = Dot11.new(:type =>     0x0,
+                           :subtype =>  0x1,
                            :addr1 =>    "ba:aa:ad:f0:00:0d")
 add_rule :probe,
          :send => probe_request,
