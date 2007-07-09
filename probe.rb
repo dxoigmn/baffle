@@ -62,19 +62,19 @@ assoc_response = Dot11.new(:type =>     0x0,
 add_rule :probe,
          :send => probe_request,
          :expect => probe_response,
-         :pass => lambda { |response| puts "Got probe response!\n #{pretty_print(response.data)}"; return :auth },
+         :pass => lambda { |response| puts "Got probe response!\n"; return :auth },
          :fail => lambda { |response| puts "No probe response!"; return false; }
       
 add_rule :auth,
          :send => auth_request,
          :expect => auth_response,
-         :pass => lambda { |response| puts "Got auth response!\n #{pretty_print(response.data)}"; return :assoc },
+         :pass => lambda { |response| puts "Got auth response!\n"; return :assoc },
          :fail => lambda { |response| puts "No auth response!"; return false; }
 
 add_rule :assoc,
          :send => assoc_request,
          :expect => assoc_response,
-         :pass => lambda { |response| puts "Got assoc response!\n #{pretty_print(response.data)}"; return true },
+         :pass => lambda { |response| puts "Got assoc response!\n"; return true },
          :fail => lambda { |response| puts "No assoc response!"; return false }
 
 puts eval("ath0", "madwifing", :probe)

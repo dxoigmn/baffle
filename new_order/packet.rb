@@ -101,25 +101,7 @@ class Packet
     
     return true
   end
-  
-  def pretty_print
-    max_name_length = self.class.fields.inject(0) { |max, field| field.display_name.length > max ? field.display_name.length : max }
-    max_value_length = self.class.fields.inject(0) { |max, field| get_field_value(field.name).to_s.length > max ? get_field_value(field.name).to_s.length : max }
 
-    s  = "#{self.class.pretty_name} (#{self.class.to_s})\n"
-    s += "-" * (max_name_length + max_value_length + 4) + "\n"    
-    
-    self.class.fields.each do |field|
-      value = get_field_value(field.name).to_s
-      
-      s += "#{field.display_name}" + " " * (max_name_length - field.display_name.length)
-      s += " => "
-      s += value + "\n"
-    end
-    
-    s
-  end
-  
   private
     
   def construct
