@@ -54,14 +54,16 @@ module Baflle
     device = Lorcon::Device.new(interface, driver, 1)
     capture = CaptureQueue.new(interface)
     
-    eval_rule device, capture, @rules[name]
+    eval_rule device, capture, @rules[name], nil
   end
   
   private
   
-  def eval_rule(device, capture, rule)
-    # TODO: We probably want the response data returned as well.
+  def eval_rule(device, capture, rule, response)
     case rule[:send]
+      when Proc
+        rule[:send] = rule[:send][response]
+        eval_rule device, capture, rule, response
       when PacketSet
         # Here we are assuming that we want a response for each packet from a packetset, in contrast to
         # having a single response to a set of packets.
@@ -120,7 +122,7 @@ module Baflle
     case rule
       when Symbol
         fail "Bad next rule." if !@rules.has_key?(rule)
-        eval_rule device, capture, @rules[rule]
+        eval_rule device, capture, @rules[rule], response
       when Proc
         process_next_rule rule[response], response, device, capture
       else
