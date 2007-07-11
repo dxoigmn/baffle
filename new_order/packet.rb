@@ -59,13 +59,26 @@ class Packet
   
     # Make sure all packet values are equal to our values.
     packet.field_values.each do |name, value|
-      my_value = self.send(name)
-      return false if my_value != value
+      next if packet.class.field(name).kind_of?(NestedField)
+      next if value == nil
+      return false if self.send(:get_field_value, name) != value
     end
-    
-    # Make sure all nested values are equal to our nested values (recurse).
-    #puts "Evaluating nested values for #{nested.class} vs #{packet.nested}."
-    nested =~ packet.nested
+
+    if packet.nested.kind_of?(Array) && nested.kind_of?(Array)
+      # Ordering does not matter with arrays. This is O(n**2).
+      packet.nested.inject(false) do |contains, field|
+        contains || nested.inject(false) do |found, nested_field|
+          found || (nested_field =~ field)
+        end
+      end
+    elsif packet.nested == nil
+      return true
+    elsif nested == nil
+      return false
+    else
+      # Make sure all nested values are equal to our nested values (recurse).
+      nested =~ packet.nested
+    end
   end
   
   def nested
@@ -158,7 +171,6 @@ class Packet
   end
   
   def set_field_value(field_name, value)
-    puts "setting #{field_name} = #{value.inspect}" if field_name == :addr4
     @field_values[field_name] = value
   end
 

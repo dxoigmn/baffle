@@ -22,7 +22,11 @@ probe_request = Dot11.new(:subtype => 0x4,
                              
 probe_response = Dot11.new(:type =>     0x0,
                            :subtype =>  0x5,
-                           :addr1 =>    "ba:aa:ad:f0:00:0d")
+                           :addr1 =>    "ba:aa:ad:f0:00:0d") /
+                 Dot11ProbeResp.new() /
+                 Dot11Elt.new(:id =>  0x00,
+                              :info_length => 0x0d,
+                              :info => "Nanda_test_AP")
 
 def auth_request(response)
   puts "Responding to #{response.addr2}"
