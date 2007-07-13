@@ -7,7 +7,7 @@ class Dot11 < Packet
   enum        :type,      2,    :spec => ['Management', 'Control', 'Data', 'Reserved']
   unsigned    :version,   2
   flags       :flags,     8,    :spec => ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
-  unsigned    :id,        16
+  unsigned    :duration,  16
   hex_octets  :addr1,     48
   hex_octets  :addr2,     48,   :applicable => [{:type => 1}, {:subtype => [0x0B, 0x0A, 0x0E, 0x0F]}, true]
   # proc {|instance| if instance.type == 1 then [0x0B, 0x0A, 0x0E, 0x0F].include?(instance.subtype) else true end}

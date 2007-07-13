@@ -14,26 +14,31 @@ class CaptureQueue < Queue
     @sniff = false
     @capture = nil
     @mutex = Mutex.new
-    @mutex.lock
+    @capture_mutex = Mutex.new
+    @capture_mutex.lock
     @thread = Thread.new do
       @capture = Capture.open(device)
-      @mutex.unlock
+      @capture_mutex.unlock
       @capture.each do |pkt|
         self.push(pkt) if @sniff
+        puts "pushed #{pkt.inspect}" if @sniff
       end
     end
+    
+    sleep 2
   end
   
   def start(filter = "")
-    #@mutex.lock
+    @capture_mutex.lock
     self.clear
 
     @capture.filter = filter
     @sniff = true
-    #@mutex.unlock
+    @capture_mutex.unlock
   end
   
   def stop
+    self.clear
     @sniff = false
   end
   
@@ -77,8 +82,9 @@ module Baflle
 
         rule[:send].each do |packet|
           p packet.data
+            
           return_values << eval_packet(rule, packet)
-          sleep 5
+          sleep 2
         end
         
         return return_values
@@ -92,7 +98,10 @@ module Baflle
   end
   
   def eval_packet(rule, packet)
-    @capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
+    filter = rule[:expect].kind_of?(String) ? rule[:expect] : ""
+    filter = rule[:filter] if rule[:filter]
+    
+    @capture.start(filter)
     send_p packet
         
     # Wait for response, timing out as necessary
