@@ -7,6 +7,7 @@ require "thread"
 require "Lorcon"
 require "timeout"
 
+
 class CaptureQueue < Queue
   def initialize(device)
     super()
@@ -24,12 +25,12 @@ class CaptureQueue < Queue
   end
   
   def start(filter = "")
-    @mutex.lock
+    #@mutex.lock
     self.clear
 
     @capture.filter = filter
     @sniff = true
-    @mutex.unlock
+    #@mutex.unlock
   end
   
   def stop
@@ -51,41 +52,49 @@ module Baflle
   end
   
   def eval(interface, driver, name)
-    device = Lorcon::Device.new(interface, driver, 1)
-    capture = CaptureQueue.new(interface)
+    begin
+      @device = Lorcon::Device.new(interface, driver, 1)
+      @capture = CaptureQueue.new(interface)
     
-    eval_rule device, capture, @rules[name], nil
+      eval_rule @rules[name], nil
+    rescue RuntimeError
+      puts "Unable to put card into monitor / injection mode. Typically you have to be root to do this."
+      exit
+    end
   end
   
   private
   
-  def eval_rule(device, capture, rule, response)
+  def eval_rule(rule, response)
     case rule[:send]
       when Proc
         rule[:send] = rule[:send][response]
-        eval_rule device, capture, rule, response
+        eval_rule rule, response
       when PacketSet
         # Here we are assuming that we want a response for each packet from a packetset, in contrast to
         # having a single response to a set of packets.
         return_values = []
-        
+
         rule[:send].each do |packet|
-          return_values << eval_packet(device, capture, rule, packet)
+          p packet.data
+          return_values << eval_packet(rule, packet)
+          sleep 5
         end
         
         return return_values
       when Packet
-        return eval_packet(device, capture, rule, rule[:send])
+        return eval_packet(rule, rule[:send])
     end
   end
   
-  def eval_packet(device, capture, rule, packet)
-    # Start capture
-    capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
-    
-    # Send packet
-    device.write(packet, 1, 0)
-    
+  def send_p(packet)
+    @device.write(packet, 1, 0)
+  end
+  
+  def eval_packet(rule, packet)
+    @capture.start( rule[:expect].kind_of?(String) ? rule[:expect] : "" )
+    send_p packet
+        
     # Wait for response, timing out as necessary
     response = nil
     
@@ -93,12 +102,14 @@ module Baflle
       Timeout::timeout(rule[:timeout] || 100) do
         # Loop until we receive an acceptable response.
         while response == nil
-          response = Radiotap.new(capture.pop[0..-5]).frame
+          response = Radiotap.new(@capture.pop[0..-5]).frame
           expect = rule[:expect]
           
           case true
             when expect.kind_of?(Packet)
               response = nil unless response =~ expect
+            when expect.kind_of?(Proc)
+              response = nil unless expect[response]
             when expect.kind_of?(String)
               break # First packet captured is good because of tcpdump filter.
             when expect.respond_to?(:include?)
@@ -112,19 +123,19 @@ module Baflle
       response = nil
     end
     
-    capture.stop
+    @capture.stop
 
     # Evaluate next rule/proc
-    process_next_rule ((response != nil) ? rule[:pass] : rule[:fail]), response, device, capture
+    process_next_rule ((response != nil) ? rule[:pass] : rule[:fail]), response
   end
 
-  def process_next_rule(rule, response, device, capture)
+  def process_next_rule(rule, response)
     case rule
       when Symbol
         fail "Bad next rule." if !@rules.has_key?(rule)
-        eval_rule device, capture, @rules[rule], response
+        eval_rule @rules[rule], response
       when Proc
-        process_next_rule rule[response], response, device, capture
+        process_next_rule rule[response], response
       else
         return rule
     end

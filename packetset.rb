@@ -13,7 +13,7 @@ class PacketSet
     end
         
     @field_sizes = @fields.map do |field|
-      if field.value.respond_to?(:size) && !(field.value.kind_of?(String) || field.value.kind_of?(Numeric))
+      if field.value.respond_to?(:size) && !(field.value.kind_of?(String) || field.value.kind_of?(Numeric) || field.value.kind_of?(Packet))
         field.value.size
       elsif field.value.respond_to?(:entries)
         field.value.entries.size

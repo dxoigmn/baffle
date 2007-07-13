@@ -9,10 +9,14 @@ class Dot11 < Packet
   flags       :flags,     8,    :spec => ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
   unsigned    :id,        16
   hex_octets  :addr1,     48
-  hex_octets  :addr2,     48,   :applicable => [{:type => 1}, {:subtype => [0x0B, 0x0A, 0x0E, 0x0F]}, true] # proc {|instance| if instance.type == 1 then [0x0B, 0x0A, 0x0E, 0x0F].include?(instance.subtype) else true end}
-  hex_octets  :addr3,     48,   :applicable => {:type => [0, 2]} # proc {|instance| [0, 2].include?(instance.type)}
-  unsigned    :sc,        16,   :endian => :little, :applicable => [{:type => 1}, false, true] # proc {|instance| instance.type != 1}
-  hex_octets  :addr4,     48,   :applicable => [{:type => 2}, {:flags & 0x03 => 0x03}, false] # proc {|instance| instance.type == 2 && (instance.flags & 0x3 == 0x3)}
+  hex_octets  :addr2,     48,   :applicable => [{:type => 1}, {:subtype => [0x0B, 0x0A, 0x0E, 0x0F]}, true]
+  # proc {|instance| if instance.type == 1 then [0x0B, 0x0A, 0x0E, 0x0F].include?(instance.subtype) else true end}
+  hex_octets  :addr3,     48,   :applicable => {:type => [0, 2]}
+  # proc {|instance| [0, 2].include?(instance.type)}
+  unsigned    :sc,        16,   :endian => :little, :applicable => [{:type => 1}, false, true]
+  # proc {|instance| instance.type != 1}
+  hex_octets  :addr4,     48,   :applicable => [{:type => 2}, {:flags & 0x03 => 0x03}, false]
+  # proc {|instance| instance.type == 2 && (instance.flags & 0x3 == 0x3)}
   nest        :payload,   nil,  :nested_class => proc { |instance|
     if instance.flags & 0x40 == 0x40
       Dot11WEP
