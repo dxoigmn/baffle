@@ -38,6 +38,8 @@ class PacketSet
       
       if value.kind_of?(Array) or value.kind_of?(Range)
         out.send((@fields[i].name.to_s + "=").intern, @fields[i].value.entries[index])
+      elsif value.kind_of?(PacketSet) # Could be done more simply by making PacketSet implement enumerable
+	out.send((@fields[i].name.to_s + "=").intern, @fields[i].value[index])
       else
         out.send((@fields[i].name.to_s + "=").intern, @fields[i].value)
       end
