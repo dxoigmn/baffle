@@ -7,49 +7,6 @@ require "thread"
 require "Lorcon"
 require "timeout"
 
-
-class CaptureQueue < Queue
-  def initialize(device)
-    super()
-    @sniff = false
-    @capture = nil
-    @mutex = Mutex.new
-    @capture_mutex = Mutex.new
-    @capture_mutex.lock
-    @thread = Thread.new do
-      @capture = Capture.open(device)
-      @capture_mutex.unlock
-      @capture.each do |pkt|
-        self.push(pkt) if @sniff
-        puts "pushed #{pkt.inspect}" if @sniff
-      end
-    end
-    
-    sleep 2
-  end
-  
-  def start(filter = "")
-    @capture_mutex.lock	
-    self.clear
-
-    @capture.filter = filter
-    @sniff = true
-    @capture_mutex.unlock
-  end
-  
-  def stop
-    self.clear
-    @sniff = false
-  end
-  
-  def pop
-    @mutex.lock
-    ret = super
-    @mutex.unlock
-    ret
-  end
-end
-
 module Baflle
   def add_rule(name, args)
     @rules ||= {}
@@ -59,8 +16,8 @@ module Baflle
   def eval(interface, driver, name)
     begin
       @device = Lorcon::Device.new(interface, driver, 1)
-      @capture = CaptureQueue.new(interface)
-    
+      @interface = interface
+      
       eval_rule @rules[name], nil
     rescue RuntimeError
       puts "Unable to put card into monitor / injection mode. Typically you have to be root to do this."
@@ -87,7 +44,7 @@ module Baflle
           
           p value
           
-          return_values << p
+          return_values << value
           sleep 2
         end
         
@@ -102,42 +59,45 @@ module Baflle
   end
   
   def eval_packet(rule, packet)
-    filter = rule[:expect].kind_of?(String) ? rule[:expect] : ""
-    filter = rule[:filter] if rule[:filter]
+    capture_options = { :device => @interface }
+    capture_options[:filter] = rule[:filter] if rule[:filter]
     
-    @capture.start(filter)
+    capture = Capture.open(capture_options)
+    responses = []    
+
     send_p packet
-        
-    # Wait for response, timing out as necessary
-    response = nil
-    
     begin
-      Timeout::timeout(rule[:timeout] || 100) do
-        # Loop until we receive an acceptable response.
-        while response == nil
-          response = Radiotap.new(@capture.pop[0..-5]).frame
-          expect = rule[:expect]
-          
-          case true
-            when expect.kind_of?(Packet)
-              response = nil unless response =~ expect
-            when expect.kind_of?(Proc)
-              response = nil unless expect[response]
-            when expect.kind_of?(String)
-              break # First packet captured is good because of tcpdump filter.
-            when expect.respond_to?(:include?)
-              response = nil if !expect.include?(response)
-            else
-              fail "Bad expect type."
-          end
-        end
+      Timeout::timeout(rule[:timeout] || 1) do
+        capture.each { |pkt| responses << pkt }
       end
     rescue Timeout::Error
-      response = nil
+      # yay we timed out!
     end
     
-    @capture.stop
-
+    capture.close
+    
+    response = nil    
+    responses.each do |pkt|
+      pkt = pkt[0..-5]        # Get rid of FCS
+      pkt = Radiotap.new(pkt) # Parse radiotap header
+      pkt = pkt.frame         # Get 802.11 frame
+      expect = rule[:expect]
+      
+      # Process pkt with respect to expect
+      case expect
+        when Packet
+          response = pkt if pkt =~ expect
+        when Proc
+          response = pkt if expect[pkt]
+        when NilClass
+          response = pkt
+        when Enumerable
+          response = pkt if expect.include?(pkt)
+      end
+      
+      break if response != nil
+    end
+    
     # Evaluate next rule/proc
     process_next_rule ((response != nil) ? rule[:pass] : rule[:fail]), response
   end

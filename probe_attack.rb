@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-require "baflle"
+require "baflle-ng"
 
 if ARGV.length < 2
   puts "Usage: ./probe_attack.rb [local mac] [remote mac] [essid]"
@@ -42,8 +42,7 @@ add_rule :probe,
          :send => $probes,
          :expect => $probe_response,
          :pass => "Got probe response!",
-         :fail => "No probe response!",
-         :timeout => 5,
-         :filter => "wlan[0] == 0x50"
+         :fail => "No probe response!"#,
+         #:filter => "wlan[0] == 0x50"
       
 puts eval("ath0", "madwifing", :probe)
