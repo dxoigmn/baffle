@@ -436,6 +436,10 @@ module Dot11EltContainer
     buffer
   end
   
+  def /(other)
+    elements << other
+  end
+  
   private
   
   def dissect_elements(data)
