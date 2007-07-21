@@ -836,9 +836,6 @@ class Radiotap < Packet
     @pad = fields[1]
     @stuff_length = fields[2]
     
-    puts "stuff_length = #{@stuff_length}; length = #{@data.length}"
-    p @data
-    
     @rest = data[@stuff_length..-1]
   end
 end
