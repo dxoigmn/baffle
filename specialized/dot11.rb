@@ -70,12 +70,12 @@ class Dot11 < Packet
     @flags = other
   end
   
-  def id
-    @id ||= 0
+  def duration
+    @duration ||= 0
   end
   
-  def id=(other)
-    @id = other
+  def duration=(other)
+    @duration = other
   end
   
   def addr1
@@ -133,7 +133,7 @@ class Dot11 < Packet
   def data
     buffer = ""
     
-    buffer = [(subtype << 4) | (type << 2) | version, flags, id].concat(Packet.mac2array(addr1)).pack("CCSC6")
+    buffer = [(subtype << 4) | (type << 2) | version, flags, duration].concat(Packet.mac2array(addr1)).pack("CCSC6")
     
     if (type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(subtype)) || (type != 1)
       buffer += Packet.mac2array(addr2).pack("C6")
@@ -166,7 +166,7 @@ class Dot11 < Packet
     return false unless other.kind_of?(Dot11)
     
     basics = subtype.eql?(other.subtype) && type.eql?(other.type) && version.eql?(other.version) &&
-             flags.eql?(other.flags) && id.eql?(other.id) && addr1.eql?(other.addr1)
+             flags.eql?(other.flags) && duration.eql?(other.duration) && addr1.eql?(other.addr1)
              
     return false unless basics
     
@@ -217,7 +217,7 @@ class Dot11 < Packet
     "subtype: ... #{subtype} (#{@@TYPENAMES[type][subtype]})\n" + 
     "version: ... #{version}\n" +
     "flags: ..... #{"%#02x" % flags} (#{"0" * (8 - flags.to_s(2).length) + flags.to_s(2)}#{if set_flags.size > 0 then ' : ' + set_flags.join(', ') else '' end})\n" +
-    "id: ........ #{id}\n" +
+    "duration: .. #{duration}\n" +
     "addr1: ..... #{addr1}\n" +
     (if addr2 then "addr2: ..... #{addr2}\n" else "" end) +
     (if addr3 then "addr3: ..... #{addr3}\n" else "" end) +
@@ -254,7 +254,7 @@ class Dot11 < Packet
     @version = fields[0] & 0x03
     
     @flags = fields[1]
-    @id = fields[2]
+    @duration = fields[2]
 
     # The array2mac calculations could be lazy if we really needed speed
     @addr1 = Packet.array2mac(fields[3..-1])
@@ -438,6 +438,8 @@ module Dot11EltContainer
   
   def /(other)
     elements << other
+    
+    self
   end
   
   private
