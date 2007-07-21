@@ -785,6 +785,6 @@ class Radiotap < Packet
     @pad = fields[1]
     @stuff_length = fields[2]
     
-    @rest = [()@stuff_length + 4)..-1]
+    @rest = [(@stuff_length + 4)..-1]
   end
 end
