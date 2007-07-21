@@ -417,7 +417,7 @@ class Dot11EltRates < Dot11Elt
     @rates = []
     
     @info.each_byte do |b|
-      @rates << b / 2
+      (@rates & 0xE0) << b / 2
     end
     
     @rates
