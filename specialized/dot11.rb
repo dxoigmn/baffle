@@ -36,7 +36,8 @@ end
 class Dot11 < Packet
   @@TYPENAMES = [["association request", "association response", "reassociation request", "reassociation response", "probe request", "probe response", "reserved0", "reserved1", "beacon", "ATIM", "disassociation", "authorization", "deauthorization", "reserved2", "reserved3", "reserved4"],
                  ["reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7", "reserved8", "PS-poll", "RTS", "CTS", "ACK", "CF-end", "CF-end + CF-ack"],
-                 ["data", "data + CF-ack", "data + CF-poll", "data + CF-ack + CF-poll", "null funciton (no data)", "CF-ack (no data)", "CF-poll (no data)", "CF-ack + CF-poll (no data)", "reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7"]]
+                 ["data", "data + CF-ack", "data + CF-poll", "data + CF-ack + CF-poll", "null funciton (no data)", "CF-ack (no data)", "CF-poll (no data)", "CF-ack + CF-poll (no data)", "reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7"],
+                 ["reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7", "reserved8", "reserved9", "reserved10", "reserved11", "reserved12", "reserved13", "reserved14", "reserved15"]]
   
   def subtype
     @subtype ||= 0
@@ -210,7 +211,9 @@ class Dot11 < Packet
     self
   end
   
-  def to_s
+  alias to_s data 
+  
+  def inspect
     binary_flags = flags.to_s(2) 
     flag_names = ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
     set_flags = []
@@ -268,7 +271,7 @@ class Dot11 < Packet
     @addr1 = Packet.array2mac(fields[3..-1])
     
     @rest = data[10..-1]
-
+    
     if (@type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(@subtype)) || (@type != 1)
       if !@rest || @rest.empty?
         @corrupt = true
@@ -786,7 +789,21 @@ class Dot11Deauth < Packet
 end
 
 class Dot11WEP < Packet
+  def data
+
+  end
   
+  def to_s
+    "Dot11WEP\n" + 
+    "-------------\n" + 
+    "unknown\n"
+  end
+
+  private
+  
+  def dissect(data)
+    @rest = data
+  end    
 end
 
 class Radiotap < Packet
@@ -814,11 +831,14 @@ class Radiotap < Packet
   def dissect(data)
     fields = data.unpack("CCv")
     
-    
+    @data = data
     @revision = fields[0]
     @pad = fields[1]
     @stuff_length = fields[2]
     
-    @rest = [(@stuff_length + 4)..-1]
+    puts "stuff_length = #{@stuff_length}; length = #{@data.length}"
+    p @data
+    
+    @rest = data[@stuff_length..-1]
   end
 end
