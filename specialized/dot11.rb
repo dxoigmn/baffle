@@ -42,32 +42,76 @@ class Dot11 < Packet
     @subtype ||= 0
   end
   
+  def subtype=(other)
+    @subtype = other
+  end
+  
   def type
     @type ||= 0
+  end
+
+  def type=(other)
+    @type = other
   end
   
   def version
     @version ||= 0
   end
   
+  def version=(other)
+    @version = other
+  end
+  
   def flags
     @flags ||= 0
+  end
+  
+  def flags=(other)
+    @flags = other
   end
   
   def id
     @id ||= 0
   end
   
+  def id=(other)
+    @id = other
+  end
+  
   def addr1
     @addr1 ||= 0
+  end
+  
+  def addr1=(other)
+    if other.kind_of?(Integer)
+      @addr1 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
+    elsif other.kind_of?(String)
+      @addr1 = other
+    end
   end
 
   def addr2
     @addr2 ||= 0
   end
 
+  def addr2=(other)
+    if other.kind_of?(Integer)
+      @addr2 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
+    elsif other.kind_of?(String)
+      @addr2 = other
+    end
+  end
+
   def addr3
     @addr3 ||= 0
+  end
+  
+  def addr3=(other)
+    if other.kind_of?(Integer)
+      @addr3 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
+    elsif other.kind_of?(String)
+      @addr3 = other
+    end
   end
   
   def sc
@@ -76,6 +120,14 @@ class Dot11 < Packet
   
   def addr4
     @addr4 ||= 0
+  end
+  
+  def addr4=
+    if other.kind_of?(Integer)
+      @addr4 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
+    elsif other.kind_of?(String)
+      @addr4 = other
+    end
   end
 
   def data
@@ -233,7 +285,7 @@ class Dot11 < Packet
 end
 
 class Dot11Elt < Packet
-  attr_reader :id, :info_length, :info
+  attr_accessor :id, :info_length, :info
   
   def Dot11Elt.register_element(id, klass)
     @@registered_elements ||= {}
@@ -404,7 +456,7 @@ module Dot11EltContainer
 end
 
 class Dot11Beacon < Packet
-  attr_reader :timestamp, :beacon_interval, :capabilities
+  attr_accessor :timestamp, :beacon_interval, :capabilities
   
   include Dot11EltContainer
   
@@ -452,7 +504,7 @@ class Dot11ATIM < Packet
 end
 
 class Dot11Disas < Packet
-  attr_reader :reason
+  attr_accessor :reason
   
   def data
     [reason].pack("v")
@@ -472,12 +524,12 @@ class Dot11Disas < Packet
 end
 
 class Dot11AssoReq < Packet
-  attr_reader :capabilities, :listen_interval
+  attr_accessor :capabilities, :listen_interval
   
   include Dot11EltContainer
   
   def data
-    buffer = [capabilities, listen_interval].pack("Sv")
+    buffer = [capabilities, listen_interval].pack("nv")
     
     buffer += element_data
   end
@@ -494,7 +546,7 @@ class Dot11AssoReq < Packet
   private
   
   def dissect(data)
-    fields = data.unpack("Sv")
+    fields = data.unpack("nv")
     
     @capabilities = fields[0]
     @listen_interval = fields[1]
@@ -504,12 +556,12 @@ class Dot11AssoReq < Packet
 end
 
 class Dot11AssoResp < Packet
-  attr_reader :capabilities, :status, :aid
+  attr_accessor :capabilities, :status, :aid
   
   include Dot11EltContainer
   
   def data
-    buffer = [capabilities, status, aid].pack("Svv")
+    buffer = [capabilities, status, aid].pack("nvv")
     
     buffer += element_data
   end
@@ -527,7 +579,7 @@ class Dot11AssoResp < Packet
   private
   
   def dissect(data)
-    fields = data.unpack("Svv")
+    fields = data.unpack("nvv")
     
     @capabilities = fields[0]
     @status = fields[1]
@@ -538,12 +590,12 @@ class Dot11AssoResp < Packet
 end
 
 class Dot11ReassoReq < Packet
-  attr_reader :capabilities, :current_ap, :listen_interval
+  attr_accessor :capabilities, :current_ap, :listen_interval
   
   include Dot11EltContainer
   
   def data
-    buffer = [capabilities].concat(mac2array(current_ap)).concat([listen_interval]).pack("SC6v")
+    buffer = [capabilities].concat(mac2array(current_ap)).concat([listen_interval]).pack("nC6v")
     
     buffer += element_data
   end
@@ -561,7 +613,7 @@ class Dot11ReassoReq < Packet
   private
   
   def dissect(data)
-    fields = data.unpack("SC6v")
+    fields = data.unpack("nC6v")
     
     @capabilities = fields[0]
     @current_ap = Packet.array2mac(fields[1, 6])
@@ -614,12 +666,12 @@ class Dot11ProbeReq < Packet
 end
 
 class Dot11ProbeResp < Packet
-  attr_reader :timestamp, :beacon_interval, :capabilities
+  attr_accessor :timestamp, :beacon_interval, :capabilities
   
   include Dot11EltContainer
   
   def data
-    buffer = [(timestamp & 0xFFFFFFFF00000000) >> 32, timestamp & 0xFFFFFFFF, beacon_interval, capabilities].pack("V2vS")
+    buffer = [(timestamp & 0xFFFFFFFF00000000) >> 32, timestamp & 0xFFFFFFFF, beacon_interval, capabilities].pack("V2vn")
     
     buffer += element_data
   end
@@ -645,7 +697,7 @@ class Dot11ProbeResp < Packet
   private
   
   def dissect(data)
-    fields = data.unpack("V2vS")
+    fields = data.unpack("V2vn")
     
     @timestamp = (fields[1] << 32) | fields[0]
     @beacon_interval = fields[2]
@@ -656,7 +708,7 @@ class Dot11ProbeResp < Packet
 end
 
 class Dot11Auth < Packet
-  attr_reader :algo, :seqnum, :status
+  attr_accessor :algo, :seqnum, :status
   
   include Dot11EltContainer
   
@@ -680,7 +732,7 @@ class Dot11Auth < Packet
 end
 
 class Dot11Deauth < Packet
-  attr_reader :reason
+  attr_accessor :reason
 
   def data
     [reason].pack("v")

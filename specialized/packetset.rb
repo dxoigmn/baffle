@@ -59,7 +59,7 @@ class PacketSet
   end
 
   def include?(packet)
-    # This is horrrrrribly inefficient.
+    # This is horrrrrribly inefficient. FIXME
     each do |pkt|
       return true if packet == pkt
     end
