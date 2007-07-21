@@ -133,6 +133,10 @@ class Dot11 < Packet
       @addr4 = other
     end
   end
+  
+  def payload=(other)
+    @payload = other
+  end
 
   def data
     buffer = ""
