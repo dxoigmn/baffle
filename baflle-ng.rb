@@ -33,8 +33,9 @@ module Baflle
         rule[:send] = rule[:send][response]
         eval_rule rule, response
       when PacketSet
-        # Here we are assuming that we want a response for each packet from a packetset, in contrast to
-        # having a single response to a set of packets.
+        # Here we are assuming that we want a response for each 
+        # packet from a packetset, in contrast to having a single
+        # response to a set of packets.
         return_values = []
 
         rule[:send].each do |packet|
@@ -59,23 +60,29 @@ module Baflle
   end
   
   def eval_packet(rule, packet)
+    # Setup some capture parameters
     capture_options = { :device => @interface }
     capture_options[:filter] = rule[:filter] if rule[:filter]
     
     capture = Capture.open(capture_options)
     responses = []    
 
+    # Send packet along...
     send_p packet
+    
+    # ...and now capture packets for rule[:timeout] seconds
     begin
-      Timeout::timeout(rule[:timeout] || 1) do
+      Timeout::timeout(rule[:timeout] || 2) do
         capture.each { |pkt| responses << pkt }
       end
     rescue Timeout::Error
-      # yay we timed out!
+      # Finished capturing packets.
     end
     
     capture.close
     
+    # Find a packet in the responses array that matches what
+    # we are looking for.
     response = nil    
     responses.each do |pkt|
       pkt = pkt[0..-5]        # Get rid of FCS
