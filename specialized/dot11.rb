@@ -754,3 +754,37 @@ end
 class Dot11WEP < Packet
   
 end
+
+class Radiotap < Packet
+  attr_accessor :revision, :pad, :stuff_length, :stuff
+  
+  def data
+    
+  end
+  
+  def to_s
+    "Radiotap\n" + 
+    "-------------\n" + 
+    "payload:\n" +
+    payload.to_s.indent(6)
+  end
+  
+  def payload
+    return @payload if @payload
+
+    @payload = Dot11.new(@rest)
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("CCv")
+    
+    
+    @revision = fields[0]
+    @pad = fields[1]
+    @stuff_length = fields[2]
+    
+    @rest = [()@stuff_length + 4)..-1]
+  end
+end
