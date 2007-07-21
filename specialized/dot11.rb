@@ -118,6 +118,10 @@ class Dot11 < Packet
     @sc ||= 0
   end
   
+  def sc=(other)
+    @sc = other
+  end
+  
   def addr4
     @addr4 ||= 0
   end
