@@ -1,0 +1,704 @@
+# TODO: Implement lazy mac decomposition too
+
+class String
+  def indent(depth)
+    indented = ""
+    self.each_line do |line|
+      indented += " " * depth + line
+    end
+    
+    indented
+  end
+end
+
+class Packet  
+  def initialize(parameters = {})
+    if parameters.kind_of?(String)
+      dissect(parameters)
+    elsif parameters.kind_of?(Hash)
+      parameters.each_pair do |key, value|
+        instance_variable_set("@#{key.to_s}".intern, value)
+      end
+    end
+  end
+  
+  def Packet.array2mac(array)
+    return nil unless array.size == 6
+    
+    array.map{|byte| "%02x" % byte}.join(":")
+  end
+  
+  def Packet.mac2array(mac)
+    mac.split(":").map{|byte| byte.to_i(16)}
+  end
+end
+
+class Dot11 < Packet
+  @@TYPENAMES = [["association request", "association response", "reassociation request", "reassociation response", "probe request", "probe response", "reserved0", "reserved1", "beacon", "ATIM", "disassociation", "authorization", "deauthorization", "reserved2", "reserved3", "reserved4"],
+                 ["reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7", "reserved8", "PS-poll", "RTS", "CTS", "ACK", "CF-end", "CF-end + CF-ack"],
+                 ["data", "data + CF-ack", "data + CF-poll", "data + CF-ack + CF-poll", "null funciton (no data)", "CF-ack (no data)", "CF-poll (no data)", "CF-ack + CF-poll (no data)", "reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7"]]
+  
+  def subtype
+    @subtype ||= 0
+  end
+  
+  def type
+    @type ||= 0
+  end
+  
+  def version
+    @version ||= 0
+  end
+  
+  def flags
+    @flags ||= 0
+  end
+  
+  def id
+    @id ||= 0
+  end
+  
+  def addr1
+    @addr1 ||= 0
+  end
+
+  def addr2
+    @addr2 ||= 0
+  end
+
+  def addr3
+    @addr3 ||= 0
+  end
+  
+  def sc
+    @sc ||= 0
+  end
+  
+  def addr4
+    @addr4 ||= 0
+  end
+
+  def data
+    buffer = ""
+    
+    buffer = [(subtype << 4) | (type << 2) | version, flags, id].concat(Packet.mac2array(addr1)).pack("CCSC6")
+    
+    if (type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(subtype)) || (type != 1)
+      buffer += Packet.mac2array(addr2).pack("C6")
+    end
+    
+    if [0, 2].include?(type)
+      buffer += Packet.mac2array(addr3).pack("C6")
+    end
+    
+    if type != 1
+      buffer += [sc].pack("v")
+    end
+    
+    if type == 2 && flags & 0x03 == 0x03
+      buffer += Packet.mac2array(addr4).pack("C6")
+    end
+    
+    if payload
+      buffer += payload.data
+    end
+    
+    buffer    
+  end
+  
+  def ==(other)
+    eql?(other)
+  end
+  
+  def eql?(other)
+    return false unless other.kind_of?(Dot11)
+    
+    basics = subtype.eql?(other.subtype) && type.eql?(other.type) && version.eql?(other.version) &&
+             flags.eql?(other.flags) && id.eql?(other.id) && addr1.eql?(other.addr1)
+             
+    return false unless basics
+    
+    if (type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(subtype)) || (type != 1)
+      return false unless addr2.eql?(other.addr2)
+    end
+    
+    if [0, 2].include?(type)
+      return false unless addr3.eql?(other.addr3)      
+    end
+    
+    if type != 1
+      return false unless sc.eql?(other.sc)
+    end
+    
+    if type == 2 && flags & 0x03 == 0x03
+      return false unless addr4.eql?(other.addr4)
+    end
+    
+    return true
+  end
+  
+  def /(other)
+    if @payload.nil?
+      @payload = other
+      return self
+    end
+    
+    if @payload.respond_to?(:elements)
+      @payload.elements << other
+    end
+    
+    self
+  end
+  
+  def to_s
+    binary_flags = flags.to_s(2) 
+    flag_names = ['to-DS', 'from-DS', 'MF', 'retry', 'pw-mgt', 'MD', 'wep', 'order']
+    set_flags = []
+    
+    8.times do |i|
+      set_flags << flag_names[i] if binary_flags[7 - i] == ?1
+    end
+    
+    "Dot11\n" + 
+    "----------------\n" +
+    "type: ...... #{type} (#{%w(management control data reserved)[type]})\n" +
+    "subtype: ... #{subtype} (#{@@TYPENAMES[type][subtype]})\n" + 
+    "version: ... #{version}\n" +
+    "flags: ..... #{"%#02x" % flags} (#{"0" * (8 - flags.to_s(2).length) + flags.to_s(2)}#{if set_flags.size > 0 then ' : ' + set_flags.join(', ') else '' end})\n" +
+    "id: ........ #{id}\n" +
+    "addr1: ..... #{addr1}\n" +
+    (if addr2 then "addr2: ..... #{addr2}\n" else "" end) +
+    (if addr3 then "addr3: ..... #{addr3}\n" else "" end) +
+    (if sc then "sc: ........ #{"%#02x" % sc} (fragment: #{sc & 0x0F}; sequence: #{(sc & 0xFFF0) >> 4})\n" else "" end) +
+    (if addr4 then "addr4: ..... #{addr4}\n" else "" end) + 
+    (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
+  end
+  
+  # Lazily dissect the payload
+  def payload
+    return @payload if @payload
+    
+    payload_class = if (@flags & 0x40) == 0x40
+      Dot11WEP
+    elsif @type == 0
+      [ Dot11AssoReq, Dot11AssoResp, Dot11ReassoReq, Dot11ReassoResp, Dot11ProbeReq, Dot11ProbeResp, nil, nil,
+        Dot11Beacon, Dot11ATIM, Dot11Disas, Dot11Auth, Dot11Deauth, nil, nil, nil,
+        nil, nil, nil, nil, nil, nil, nil, nil,
+        nil, nil, nil, nil, nil, nil, nil ][@subtype]
+    end
+    
+    return nil if payload_class.nil?
+        
+    @payload = payload_class.new(@rest) unless @rest.nil? || @rest.empty?
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("CCSC6")
+    
+    @subtype = (fields[0] & 0xF0) >> 4
+    @type = (fields[0] & 0x0C) >> 2
+    @version = fields[0] & 0x03
+    
+    @flags = fields[1]
+    @id = fields[2]
+
+    # The array2mac calculations could be lazy if we really needed speed
+    @addr1 = Packet.array2mac(fields[3..-1])
+    
+    @rest = data[10..-1]
+
+    if (@type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(@subtype)) || (@type != 1)
+      @addr2 = Packet.array2mac(@rest.unpack("C6")) 
+      @rest = @rest[6..-1]
+    end
+    
+    if [0, 2].include?(@type)
+      @addr3 = Packet.array2mac(@rest.unpack("C6"))
+      @rest = @rest[6..-1]
+    end
+    
+    if @type != 1
+      @sc = @rest.unpack("v")[0]
+      @rest = @rest[2..-1]
+    end
+    
+    if @type == 2 && @flags & 0x03 == 0x03
+      @addr4 = Packet.array2mac(@rest.unpack("C6"))
+      @rest = @rest[6..-1]
+    end
+  end
+
+end
+
+class Dot11Elt < Packet
+  attr_reader :id, :info_length, :info
+  
+  def Dot11Elt.register_element(id, klass)
+    @@registered_elements ||= {}
+    
+    @@registered_elements[id] = klass
+  end
+  
+  def data
+    buffer = [id, info_length].pack("CC")
+    
+    buffer += info
+  end
+  
+  def to_s
+    "Dot11Elt\n" + 
+    "------------\n" +
+    "id: ............ #{id}\n" + 
+    "info_length: ... #{info_length}\n" +
+    "info: .......... #{info.inspect}\n"
+  end
+  
+  private 
+  
+  def dissect(data)
+    fields = data.unpack("CC")
+    
+    @id = fields[0]
+    @info_length = fields[1]
+    
+    @info = data[2, @info_length]
+    
+    @rest = data[2 + @info_length..-1]
+  end
+  
+  class << self    
+    # Hook into new to "subclass on the fly"
+    alias old_new new
+    
+    def new(parameters)
+      return old_new(parameters) if self != Dot11Elt
+
+      if parameters.kind_of?(String)
+        elt_id = parameters.unpack("C")[0]
+
+        if @@registered_elements && @@registered_elements[elt_id]
+          return @@registered_elements[elt_id].new(parameters)
+        else
+          elt = Dot11Elt.allocate
+          elt.send(:initialize, parameters)
+          
+          return elt
+        end
+        
+      elsif parameters.kind_of?(Hash)
+        
+        if @@registered_elements && @@registered_elements[parameters[:id]]
+           return @@registered_elements[parameters[:id]].new(parameters)
+         else
+           elt = Dot11Elt.allocate
+           elt.send(:initialize, parameters)
+
+           return elt
+         end
+        
+        
+      end      
+      
+    end
+    
+    def element_id(id)
+      Dot11Elt.register_element(id, self)
+    end
+  end
+end
+
+class Dot11EltSSID < Dot11Elt
+  element_id 0
+  
+  def essid
+    return @info
+  end
+  
+  def to_s
+    "Dot11EltSSID\n" + 
+    "-------------\n" +
+    "id: ............ 0\n" +
+    "info_length: ... #{info_length}\n" + 
+    "essid: ......... #{info.inspect} (#{essid})\n"
+  end
+end
+
+class Dot11EltRates < Dot11Elt
+  element_id 1
+  
+  def rates
+    return @rates if @rates
+
+    @rates = []
+    
+    @info.each_byte do |b|
+      @rates << b / 2
+    end
+    
+    @rates
+  end
+  
+  def to_s
+    "Dot11EltRates\n" + 
+    "------------------\n" +
+    "id: ............ 1\n" +
+    "info_length: ... #{info_length}\n" + 
+    "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
+  end
+end
+
+module Dot11EltContainer
+  def elements
+    if @elements.nil?
+      @elements = []
+      
+      if @rest
+        dissect_elements(@rest)
+      end
+      
+      return @elements      
+    end
+    
+    @elements
+  end
+  
+  def element_data
+    buffer = ""
+        
+    elements.each do |element|
+      buffer += element.data
+    end
+    
+    buffer
+  end
+  
+  def element_to_s
+    buffer = ""
+    
+    elements.each do |element|
+      buffer += element.to_s + "\n"
+    end
+    
+    buffer
+  end
+  
+  private
+  
+  def dissect_elements(data)
+    @elements = []
+    
+    current_pos = 0
+    
+    while current_pos < data.length
+      info_length = data[current_pos, 2].unpack("xC")[0]
+      total_elt_length = 2 + info_length
+        
+      @elements << Dot11Elt.new(data[current_pos, total_elt_length])
+      
+      current_pos += total_elt_length
+    end
+    
+  end
+end
+
+class Dot11Beacon < Packet
+  attr_reader :timestamp, :beacon_interval, :capabilities
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
+        
+    buffer += element_data
+  end
+  
+  def to_s
+    binary_caps = capabilities.to_s(2) 
+    cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
+    set_caps = []
+    
+    16.times do |i|
+      set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+    end
+    
+    "Dot11Beacon\n" + 
+    "-------------------------\n" +
+    "timestamp: ......... #{timestamp}\n" +
+    "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
+    "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
+    "elements:\n" + 
+    element_to_s.indent(7)
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("V2vn")
+    
+    p fields
+    
+    @timestamp = (fields[1] << 32) | fields[0]
+    @beacon_interval = fields[2]
+    @capabilities = fields[3]
+        
+    @rest = data[12..-1]
+  end
+end
+
+class Dot11ATIM < Packet
+  
+end
+
+class Dot11Disas < Packet
+  attr_reader :reason
+  
+  def data
+    [reason].pack("v")
+  end
+  
+  def to_s
+    "Dot11Disas\n" + 
+    "-------------\n" + 
+    "reason: #{reason}\n"
+  end
+  
+  private
+  
+  def dissect(data)
+    @reason = data.unpack("v")[0]
+  end
+end
+
+class Dot11AssoReq < Packet
+  attr_reader :capabilities, :listen_interval
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [capabilities, listen_interval].pack("Sv")
+    
+    buffer += element_data
+  end
+  
+  def to_s
+    "Dot11AssoReq\n" +
+    "---------------\n" +
+    "capabilities: ...... #{capabilities}\n" +
+    "listen_interval: ... #{listen_interval}\n" + 
+    "elements:\n" + 
+    element_to_s.indent(7)    
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("Sv")
+    
+    @capabilities = fields[0]
+    @listen_interval = fields[1]
+    
+    @rest = data[4..-1]
+  end
+end
+
+class Dot11AssoResp < Packet
+  attr_reader :capabilities, :status, :aid
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [capabilities, status, aid].pack("Svv")
+    
+    buffer += element_data
+  end
+  
+  def to_s
+    "Dot11AssoResp\n" +
+    "---------------\n" +
+    "capabilities: ... #{capabilities}\n" +
+    "status: ......... #{status}\n" + 
+    "aid: ............ #{aid}\n" + 
+    "elements:\n" + 
+    element_to_s.indent(7)    
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("Svv")
+    
+    @capabilities = fields[0]
+    @status = fields[1]
+    @aid = fields[2]
+    
+    @rest = data[6..-1]
+  end
+end
+
+class Dot11ReassoReq < Packet
+  attr_reader :capabilities, :current_ap, :listen_interval
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [capabilities].concat(mac2array(current_ap)).concat([listen_interval]).pack("SC6v")
+    
+    buffer += element_data
+  end
+  
+  def to_s
+    "Dot11ReassoReq\n" +
+    "---------------\n" +
+    "capabilities: ...... #{capabilities}\n" +
+    "current_ap: ........ #{current_ap}\n" + 
+    "listen_interval: ... #{listen_interval}\n" + 
+    "elements:\n" + 
+    element_to_s.indent(7)
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("SC6v")
+    
+    @capabilities = fields[0]
+    @current_ap = Packet.array2mac(fields[1, 6])
+    @listen_interval = fields[7]
+    
+    @rest = data[10..-1]
+  end
+end
+
+class Dot11ReassoResp < Packet
+  include Dot11EltContainer
+  
+  def data
+    element_data
+  end
+  
+  def to_s
+    "Dot11ReassoResp\n" +
+    "---------------\n" +
+    "elements:\n" + 
+    element_to_s.indent(7)
+  end
+  
+  private
+  
+  def dissect(data)
+    @rest = data
+  end
+end
+
+class Dot11ProbeReq < Packet
+  include Dot11EltContainer
+  
+  def data
+    element_data
+  end
+  
+  def to_s
+    "Dot11ProbeReq\n" +
+    "---------------\n" +
+    "elements:\n" + 
+    element_to_s.indent(7)
+  end
+  
+  private
+  
+  def dissect(data)
+    @rest = data
+  end
+end
+
+class Dot11ProbeResp < Packet
+  attr_reader :timestamp, :beacon_interval, :capabilities
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [(timestamp & 0xFFFFFFFF00000000) >> 32, timestamp & 0xFFFFFFFF, beacon_interval, capabilities].pack("V2vS")
+    
+    buffer += element_data
+  end
+  
+  def to_s
+    binary_caps = capabilities.to_s(2) 
+    cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
+    set_caps = []
+    
+    16.times do |i|
+      set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+    end
+    
+    "Dot11ProbeResp\n" + 
+    "-------------------------\n" +
+    "timestamp: ......... #{timestamp}\n" +
+    "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
+    "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
+    "elements:\n" + 
+    element_to_s.indent(7)    
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("V2vS")
+    
+    @timestamp = (fields[1] << 32) | fields[0]
+    @beacon_interval = fields[2]
+    @capabilities = fields[3]
+    
+    @rest = data[12..-1]
+  end  
+end
+
+class Dot11Auth < Packet
+  attr_reader :algo, :seqnum, :status
+  
+  include Dot11EltContainer
+  
+  def data
+    buffer = [algo, seqnum, status].pack("vvv")
+    
+    buffer += element_data
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("vvv")
+    
+    @algo = fields[0]
+    @seqnum = fields[1]
+    @status = fields[2]
+    
+    @rest = data[6..-1]
+  end
+end
+
+class Dot11Deauth < Packet
+  attr_reader :reason
+
+  def data
+    [reason].pack("v")
+  end
+  
+  def to_s
+    "Dot11Deauth\n" + 
+    "-------------\n" + 
+    "reason: #{reason}\n"
+  end
+
+  private
+  
+  def dissect(data)
+    @reason = data.unpack("v")[0]
+  end  
+end
+
+class Dot11WEP < Packet
+  
+end

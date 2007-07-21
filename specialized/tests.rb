@@ -1,6 +1,4 @@
-require "packet"
-require "dot11"
-
+require 'dot11'
 
 def test(klass, raw, packet, test_desc)
   dissector = (klass.new(raw) == packet)
@@ -23,7 +21,7 @@ beacon = Dot11.new(:type => 0,
                    :addr3 => "00:01:e3:41:bd:6e",
                    :sc => 0x0e00)
 
-test(Dot11, beacon_raw, beacon, "beacon frame")
+  test(Dot11, beacon_raw, beacon, "beacon frame")
 
 #####################################################################################
 
@@ -88,7 +86,7 @@ complete_beacon = Dot11.new(:type => 0,
                   Dot11Elt.new(:id => 221,
                                :info_length => 22,
                                :info => "\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x02\x01\x00\x00\x50\xf2\x02\x01\x00\x00\x50\xf2\x02")
-                                                                                                        
+ 
 test(Dot11, complete_beacon_raw, complete_beacon, "complete beacon frame")
 
 #####################################################################################
@@ -123,8 +121,7 @@ probereq = Dot11.new(:type => 0,
            Dot11Elt.new(:id => 1, :info_length => 8, :info => "\x82\x84\x8b\x96\x0c\x12\x18\x24") / 
            Dot11Elt.new(:id => 3, :info_length => 1, :info => "\x09") /
            Dot11Elt.new(:id => 50, :info_length => 4, :info => "\x30\x48\x60\x6c")
-           
+
 test(Dot11, probereq_raw, probereq, "probe request frame")
 
 #####################################################################################
-

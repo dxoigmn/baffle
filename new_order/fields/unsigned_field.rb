@@ -221,6 +221,39 @@ class Packet
         raise "unsupported: #{inspect}"
       end
     end
+    
+    # TODO: clean me up
+    def to_filter(instance)
+      len = length(instance)
+      off = offset(instance)
+      
+      if len > 32
+        raise "to_filter in unsigned_field not yet implemented for len > 4"
+      else
+        mask = nil
+        
+        if off % 8 == 0
+          b_off = off / 8
+        else
+          b_off = (off / 8.0).floor 
+        end
+        
+        if len % 8 == 0
+          b_len = len / 8
+        else
+          b_len = (len / 8.0).ceil
+          mask = 2 ** (off + len) - 2 ** (off)
+          
+        end
+
+        if mask
+          "(wlan[#{b_off}:#{b_len}] & 0x#{mask.to_s(16)}) = #{instance.send(self.name)}"
+        else
+          "wlan[#{b_off}:#{b_len}] = #{instance.send(self.name)}"
+        end
+        
+      end
+    end
   end
   
   class << self

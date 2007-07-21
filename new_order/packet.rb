@@ -115,6 +115,24 @@ class Packet
     return true
   end
 
+  def to_filter
+    filter = ""
+    
+    self.field_values.each_pair do |field, field_value|
+      next if field_value.nil?
+      
+      field_instance = self.class.field(field)
+      
+      if filter.empty?
+        filter = "(#{field_instance.to_filter(self)})"
+      else
+        filter += " and (#{field_instance.to_filter(self)})"
+      end
+    end
+    
+    filter
+  end
+  
   private
     
   def construct
@@ -157,6 +175,7 @@ class Packet
     self.class.fields.each do |field|
       next if !field.applicable?(self)
       value = field.get(self, buffer)
+
       #puts "#{self.class}: Trying to get data for #{field.name} => #{value.inspect}"
       
       if (!field.kind_of?(NestedField)) || 
