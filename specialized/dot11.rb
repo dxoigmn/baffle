@@ -219,7 +219,7 @@ class Dot11 < Packet
       set_flags << flag_names[i] if binary_flags[7 - i] == ?1
     end
     
-    "Dot11\n" + 
+    "Dot11\n" + if @corrupt then " (corrupt)" else "" end +
     "----------------\n" +
     "type: ...... #{type} (#{%w(management control data reserved)[type]})\n" +
     "subtype: ... #{subtype} (#{@@TYPENAMES[type][subtype]})\n" + 
@@ -270,21 +270,41 @@ class Dot11 < Packet
     @rest = data[10..-1]
 
     if (@type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(@subtype)) || (@type != 1)
+      if !@rest || @rest.empty?
+        @corrupt = true
+        return
+      end
+      
       @addr2 = Packet.array2mac(@rest.unpack("C6")) 
       @rest = @rest[6..-1]
     end
     
     if [0, 2].include?(@type)
+      if !@rest || @rest.empty?
+        @corrupt = true
+        return
+      end
+      
       @addr3 = Packet.array2mac(@rest.unpack("C6"))
       @rest = @rest[6..-1]
     end
     
     if @type != 1
+      if !@rest || @rest.empty?
+        @corrupt = true
+        return
+      end
+      
       @sc = @rest.unpack("v")[0]
       @rest = @rest[2..-1]
     end
     
     if @type == 2 && @flags & 0x03 == 0x03
+      if !@rest || @rest.empty?
+        @corrupt = true
+        return
+      end
+      
       @addr4 = Packet.array2mac(@rest.unpack("C6"))
       @rest = @rest[6..-1]
     end
