@@ -1,8 +1,7 @@
-$: << "new_order"
+$: << "specialized"
 require "capture"
 require "packetset"
-require "new_order/dot11"
-require "new_order/radiotap"
+require "specialized/dot11"
 require "thread"
 require "Lorcon"
 require "timeout"
@@ -21,7 +20,7 @@ class CaptureQueue < Queue
       @capture_mutex.unlock
       @capture.each do |pkt|
         self.push(pkt) if @sniff
-        puts "pushed #{pkt.inspect}" if @sniff
+        #puts "pushed #{pkt.inspect}" if @sniff
       end
     end
     
@@ -79,15 +78,19 @@ module Baflle
         # Here we are assuming that we want a response for each packet from a packetset, in contrast to
         # having a single response to a set of packets.
         return_values = []
+        current_mac = nil
 
         rule[:send].each do |packet|
           p packet.data
+          
+          current_mac = packet.addr1 if current_mac == nil
+          packet.addr1 = current_mac.next!
           
           value = eval_packet(rule, packet)
           
           p value
           
-          return_values << p
+          return_values << value
           sleep 2
         end
         
@@ -97,8 +100,8 @@ module Baflle
     end
   end
   
-  def send_p(packet)
-    @device.write(packet, 1, 0)
+  def send_p(packet, count=1)
+    @device.write(packet, count, 0)
   end
   
   def eval_packet(rule, packet)
@@ -106,25 +109,23 @@ module Baflle
     filter = rule[:filter] if rule[:filter]
     
     @capture.start(filter)
-    send_p packet
+    send_p packet, 3
         
     # Wait for response, timing out as necessary
     response = nil
     
     begin
-      Timeout::timeout(rule[:timeout] || 100) do
+      Timeout::timeout(rule[:timeout] || 2) do
         # Loop until we receive an acceptable response.
         while response == nil
-          response = Radiotap.new(@capture.pop[0..-5]).frame
+          response = Radiotap.new(@capture.pop[0..-5]).payload
           expect = rule[:expect]
-          
+
           case true
-            when expect.kind_of?(Packet)
+            when expect.kind_of?(Packet) || expect.kind_of?(Hash)
               response = nil unless response =~ expect
             when expect.kind_of?(Proc)
               response = nil unless expect[response]
-            when expect.kind_of?(String)
-              break # First packet captured is good because of tcpdump filter.
             when expect.respond_to?(:include?)
               response = nil if !expect.include?(response)
             else

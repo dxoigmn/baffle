@@ -427,7 +427,11 @@ class Dot11EltRates < Dot11Elt
     @rates = []
     
     @info.each_byte do |b|
-      (@rates & 0xE0) << b / 2
+      if b & 0x80 # MSB set?
+        @rates << (b & 0x7f) / 2
+      else
+        @rates << b / 2
+      end
     end
     
     @rates

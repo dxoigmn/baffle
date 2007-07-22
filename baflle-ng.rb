@@ -1,8 +1,8 @@
-$: << "new_order"
+$: << "specialized"
 require "capture"
 require "packetset"
-require "new_order/dot11"
-require "new_order/radiotap"
+require "specialized/dot11"
+#require "new_order/radiotap"
 require "thread"
 require "Lorcon"
 require "timeout"
@@ -66,14 +66,18 @@ module Baflle
     
     capture = Capture.open(capture_options)
     responses = []    
-
-    # Send packet along...
-    send_p packet
     
     # ...and now capture packets for rule[:timeout] seconds
     begin
-      Timeout::timeout(rule[:timeout] || 2) do
-        capture.each { |pkt| responses << pkt }
+      Timeout::timeout(rule[:timeout] || 5) do
+        sent = false
+        capture.each do |pkt|
+          # Send packet along...
+          send_p(packet) unless sent
+
+          responses << pkt
+          sent = true
+        end
       end
     rescue Timeout::Error
       # Finished capturing packets.
@@ -87,7 +91,7 @@ module Baflle
     responses.each do |pkt|
       pkt = pkt[0..-5]        # Get rid of FCS
       pkt = Radiotap.new(pkt) # Parse radiotap header
-      pkt = pkt.frame         # Get 802.11 frame
+      pkt = pkt.payload         # Get 802.11 frame
       expect = rule[:expect]
       
       # Process pkt with respect to expect

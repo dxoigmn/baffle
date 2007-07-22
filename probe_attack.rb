@@ -1,5 +1,5 @@
 #!/usr/bin/ruby
-require "baflle-ng"
+require "baflle"
 
 if ARGV.length < 2
   puts "Usage: ./probe_attack.rb [local mac] [remote mac] [essid]"
@@ -31,18 +31,18 @@ $probes = PacketSet.new(Dot11,
                         :addr1 =>     $remotemac,
                         :addr2 =>     $localmac,
                         :addr3 =>     $remotemac,
-                        :sc =>        0x0100,
+                        :sc =>        0x0000, # This is auto-filled in by the driver.
                         :payload =>   $probe_addedum)
                                                     
-$probe_response = Dot11.new(:type =>     0x0,
-                            :subtype =>  0x5,
-                            :addr1 =>    $localmac)
+$probe_response = { :type =>     0x0,
+                    :subtype =>  0x5,
+                    :addr1 =>    $localmac }
                            
 add_rule :probe,
          :send => $probes,
          :expect => $probe_response,
          :pass => "Got probe response!",
          :fail => "No probe response!"#,
-         #:filter => "wlan[0] == 0x50"
-      
+         #:filter => "wlan[0] == 0x50" # too many registers 
+
 puts eval("ath0", "madwifing", :probe)
