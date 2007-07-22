@@ -22,6 +22,16 @@ class Packet
     end
   end
   
+  def =~(other)
+    if other.kind_of?(Hash)
+      other.each_pair do |key, value|
+        return false if self.send(key) != value
+      end
+      
+      return true
+    end
+  end
+  
   def Packet.array2mac(array)
     return nil unless array.size == 6
     
