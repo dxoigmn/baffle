@@ -417,14 +417,13 @@ class Dot11Elt < Packet
            elt.send(:initialize, parameters)
 
            return elt
-         end
-        
-        
+         end    
       end      
       
     end
     
     def element_id(id)
+      @id = id
       Dot11Elt.register_element(id, self)
     end
   end
@@ -449,17 +448,17 @@ end
 class Dot11EltRates < Dot11Elt
   element_id 1
   
+  def initialize(rates = [])
+    
+  end
+  
   def rates
     return @rates if @rates
 
     @rates = []
     
     @info.each_byte do |b|
-      if b & 0x80 # MSB set?
-        @rates << (b & 0x7f) / 2
-      else
-        @rates << b / 2
-      end
+      @rates << (b & 0x7f) / 2
     end
     
     @rates
@@ -472,6 +471,30 @@ class Dot11EltRates < Dot11Elt
     "info_length: ... #{info_length}\n" + 
     "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
   end
+end
+
+class Dot11EltESR < Dot11Elt
+  element_id 50
+  
+  def rates
+    return @rates if @rates
+
+    @rates = []
+    
+    @info.each_byte do |b|
+      @rates << (b & 0x7f) / 2
+    end
+    
+    @rates    
+  end
+  
+  def to_s
+    "Dot11EltESR\n" + 
+    "------------------\n" +
+    "id: ............ 1\n" +
+    "info_length: ... #{info_length}\n" + 
+    "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
+  end  
 end
 
 module Dot11EltContainer

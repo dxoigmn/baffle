@@ -88,6 +88,7 @@ complete_beacon = Dot11.new(:type => 0,
                                :info => "\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x02\x01\x00\x00\x50\xf2\x02\x01\x00\x00\x50\xf2\x02")
  
 test(Dot11, complete_beacon_raw, complete_beacon, "complete beacon frame")
+p complete_beacon
 
 #####################################################################################
 
@@ -101,7 +102,7 @@ acknowledgement = Dot11.new(:type => 1,
 
 test(Dot11, acknowledgement_raw, acknowledgement, "acknowledgement frame")
 puts("Passed to_i test") if acknowledgement.addr1.to_i == 0x1500341852
-
+p acknowledgement
 
 #####################################################################################
 
@@ -125,5 +126,6 @@ probereq = Dot11.new(:type => 0,
            Dot11Elt.new(:id => 50, :info_length => 4, :info => "\x30\x48\x60\x6c")
 
 test(Dot11, probereq_raw, probereq, "probe request frame")
+p probereq
 
 #####################################################################################
