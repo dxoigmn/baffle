@@ -15,7 +15,7 @@ $macs = {}
  
 sniff "ath0" do |packet|
   next unless packet.type == 0
-  next unless packet.subtype == 0x5
+  next unless packet.subtype == 0xb
   next unless packet.addr1.to_s =~ /ba:aa:ad:..:..:../ 
   next if $macs.has_key?(packet.addr1.to_s)
   
