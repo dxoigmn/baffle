@@ -3,17 +3,16 @@ require "baflle-send"
 
 #$blackhole1 = "00:18:F8:F4:53:1C"
 #$blackhole2 = "00:12:0E:51:AC:55"
-#$aruba =      "00:0b:86:80:e4:e0"
-#$airport =    "00:11:24:5c:7b:07"
+#$aruba      = "00:0b:86:80:e4:e0"
+#$airport    = "00:11:24:5c:7b:07"
 
 if ARGV.length < 3
-  puts "Usage: ./probe_attack.rb [local mac] [remote mac] [essid]"
+  puts "Usage: ./probe_attack_send.rb [remote mac] [essid]"
   exit
 end
 
-$localmac = ARGV[0].to_i(16)
-$remotemac = ARGV[1]
-$essid = ARGV[2]
+$remotemac = ARGV[0]
+$essid = ARGV[1]
 
 $probe_addedum = Dot11ProbeReq.new() /
                  Dot11Elt.new(:id =>           0x00,
@@ -27,17 +26,13 @@ $probes = PacketSet.new(Dot11,
                         :subtype =>   0x4,
                         :type =>      0x0,
                         :version =>   0x0,
-                        :flags =>     0..255,
+                        :flags =>     0,
                         :duration =>  0x0000,
                         :addr1 =>     $remotemac,
-                        :addr2 =>     $localmac,
+                        :addr2 =>     "ff:ff:ff:ff:ff:ff",
                         :addr3 =>     $remotemac,
                         :sc =>        0x0000, # This is auto-filled in by the driver.
                         :payload =>   $probe_addedum)
 
-for i in 1..10
-  puts "Iteration #{i}"
-  eval "ath0", "madwifing", $probes
-  sleep 5
-end
+emit "ath0", "madwifing", $probes
 
