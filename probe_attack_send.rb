@@ -6,7 +6,7 @@ require "baflle-send"
 #$aruba      = "00:0b:86:80:e4:e0"
 #$airport    = "00:11:24:5c:7b:07"
 
-if ARGV.length < 3
+if ARGV.length < 2
   puts "Usage: ./probe_attack_send.rb [remote mac] [essid]"
   exit
 end

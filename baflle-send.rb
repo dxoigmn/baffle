@@ -15,7 +15,7 @@ module BaflleSend
           local_mac += 1
 
           send_p packet.data
-          sleep 0.1
+          sleep 0.5
         end
       when Packet
         send_p stuff
