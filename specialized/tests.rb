@@ -100,6 +100,8 @@ acknowledgement = Dot11.new(:type => 1,
                             :addr1 => "00:15:00:34:18:52")
 
 test(Dot11, acknowledgement_raw, acknowledgement, "acknowledgement frame")
+puts("Passed to_i test") if acknowledgement.addr1.to_i == 0x1500341852
+
 
 #####################################################################################
 

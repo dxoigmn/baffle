@@ -25,7 +25,7 @@ class MACAddress
   end
   
   def to_i
-    @address.pack("C6").reverse.unpack("Q")
+    ("\x00\x00" + @address.pack("C6")).reverse.unpack("Q")[0]
   end
   
   def to_s
