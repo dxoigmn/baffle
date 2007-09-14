@@ -9,8 +9,9 @@ module BaflleSend
     
     case stuff
       when PacketSet
-        local_mac = 0xbaaaad040000
+        local_mac = nil #0xbaaaad000000
         stuff.each do |packet|
+          local_mac ||= packet.addr2.to_i
           packet.addr2 = local_mac
           local_mac += 1
 
