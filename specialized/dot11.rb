@@ -11,13 +11,43 @@ class String
   end
 end
 
+class MACAddress
+  include Comparable
+  
+  def initialize(address)
+    if address.kind_of?(Integer)
+      @address = [address].pack("Q").unpack("C8")[0, 6].reverse
+    elsif address.kind_of?(String)
+      @address = address.split(":").map {|octet| octet.to_i(16)}
+    elsif address.kind_of?(Array)
+      @address = address
+    end 
+  end
+  
+  def to_i
+    @address.pack("C6").reverse.unpack("Q")
+  end
+  
+  def to_s
+    @address.map{|byte| "%02x" % byte}.join(":")
+  end
+  
+  def to_arr
+    @address
+  end
+  
+  def eql?(other)
+    self.to_i == other.to_i
+  end
+end
+
 class Packet  
   def initialize(parameters = {})
     if parameters.kind_of?(String)
       dissect(parameters)
     elsif parameters.kind_of?(Hash)
       parameters.each_pair do |key, value|
-        instance_variable_set("@#{key.to_s}".intern, value)
+        send((key.to_s + "=").intern, value)
       end
     end
   end
@@ -30,16 +60,6 @@ class Packet
       
       return true
     end
-  end
-  
-  def Packet.array2mac(array)
-    return nil unless array.size == 6
-    
-    array.map{|byte| "%02x" % byte}.join(":")
-  end
-  
-  def Packet.mac2array(mac)
-    mac.split(":").map{|byte| byte.to_i(16)}
   end
 end
 
@@ -94,10 +114,12 @@ class Dot11 < Packet
   end
   
   def addr1=(other)
-    if other.kind_of?(Integer)
-      @addr1 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
-    elsif other.kind_of?(String)
+    if other.kind_of?(Integer) || other.kind_of?(String)
+      @addr1 = MACAddress.new(other)
+    elsif other.kind_of?(MACAddress)
       @addr1 = other
+    else
+      raise "Unrecognized addr #{other.inspect}"
     end
   end
 
@@ -106,10 +128,12 @@ class Dot11 < Packet
   end
 
   def addr2=(other)
-    if other.kind_of?(Integer)
-      @addr2 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
-    elsif other.kind_of?(String)
+    if other.kind_of?(Integer) || other.kind_of?(String)
+      @addr2 = MACAddress.new(other)
+    elsif other.kind_of?(MACAddress)
       @addr2 = other
+    else
+      raise "Unrecognized addr #{other.inspect}"
     end
   end
 
@@ -118,10 +142,12 @@ class Dot11 < Packet
   end
   
   def addr3=(other)
-    if other.kind_of?(Integer)
-      @addr3 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
-    elsif other.kind_of?(String)
+    if other.kind_of?(Integer) || other.kind_of?(String)
+      @addr3 = MACAddress.new(other)
+    elsif other.kind_of?(MACAddress)
       @addr3 = other
+    else
+      raise "Unrecognized addr #{other.inspect}"
     end
   end
   
@@ -138,10 +164,12 @@ class Dot11 < Packet
   end
   
   def addr4=
-    if other.kind_of?(Integer)
-      @addr4 = Packet.array2mac([other].pack("Q").unpack("C8")[0, 6].reverse)
-    elsif other.kind_of?(String)
+    if other.kind_of?(Integer) || other.kind_of?(String)
+      @addr4 = MACAddress.new(other)
+    elsif other.kind_of?(MACAddress)
       @addr4 = other
+    else
+      raise "Unrecognized addr #{other.inspect}"
     end
   end
   
@@ -152,14 +180,14 @@ class Dot11 < Packet
   def data
     buffer = ""
     
-    buffer = [(subtype << 4) | (type << 2) | version, flags, duration].concat(Packet.mac2array(addr1)).pack("CCSC6")
+    buffer = [(subtype << 4) | (type << 2) | version, flags, duration].concat(addr1.to_arr).pack("CCSC6")
     
     if (type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(subtype)) || (type != 1)
-      buffer += Packet.mac2array(addr2).pack("C6")
+      buffer += addr2.to_arr.pack("C6")
     end
     
     if [0, 2].include?(type)
-      buffer += Packet.mac2array(addr3).pack("C6")
+      buffer += addr3.to_arr.pack("C6")
     end
     
     if type != 1
@@ -167,7 +195,7 @@ class Dot11 < Packet
     end
     
     if type == 2 && flags & 0x03 == 0x03
-      buffer += Packet.mac2array(addr4).pack("C6")
+      buffer += addr4.to_arr.pack("C6")
     end
     
     if payload
@@ -278,8 +306,8 @@ class Dot11 < Packet
     @duration = fields[2]
 
     # The array2mac calculations could be lazy if we really needed speed
-    @addr1 = Packet.array2mac(fields[3..-1])
-    
+    @addr1 = MACAddress.new(fields[3..-1])
+
     @rest = data[10..-1]
     
     if (@type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(@subtype)) || (@type != 1)
@@ -288,7 +316,7 @@ class Dot11 < Packet
         return
       end
       
-      @addr2 = Packet.array2mac(@rest.unpack("C6")) 
+      @addr2 = MACAddress.new(@rest.unpack("C6")) 
       @rest = @rest[6..-1]
     end
     
@@ -298,7 +326,7 @@ class Dot11 < Packet
         return
       end
       
-      @addr3 = Packet.array2mac(@rest.unpack("C6"))
+      @addr3 = MACAddress.new(@rest.unpack("C6"))
       @rest = @rest[6..-1]
     end
     
@@ -318,7 +346,7 @@ class Dot11 < Packet
         return
       end
       
-      @addr4 = Packet.array2mac(@rest.unpack("C6"))
+      @addr4 = MACAddress.new(@rest.unpack("C6"))
       @rest = @rest[6..-1]
     end
   end
@@ -551,7 +579,9 @@ class Dot11Beacon < Packet
 end
 
 class Dot11ATIM < Packet
-  
+  def dissect(data)
+    raise "Not implemented"
+  end
 end
 
 class Dot11Disas < Packet
@@ -824,7 +854,7 @@ class Radiotap < Packet
   attr_accessor :revision, :pad, :stuff_length, :stuff
   
   def data
-    
+    raise "This space intentionally left blank"
   end
   
   def to_s
