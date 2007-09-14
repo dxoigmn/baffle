@@ -11,7 +11,6 @@ if ARGV.length < 2
   exit
 end
 
-$localmac   = ARGV[0]
 $remotemac  = ARGV[0]
 $essid      = ARGV[1]
 
@@ -30,7 +29,7 @@ $probes = PacketSet.new(Dot11,
                         :flags =>     0..255,
                         :duration =>  0x0000,
                         :addr1 =>     $remotemac,
-                        :addr2 =>     $localmac,
+                        :addr2 =>     "ba:aa:ad:00:00:00",
                         :addr3 =>     $remotemac,
                         :sc =>        0x0000, # This is auto-filled in by the driver.
                         :payload =>   $probe_addedum)
