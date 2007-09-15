@@ -38,4 +38,6 @@ $packets = PacketSet.new  Dot11,
                           :sc =>        0x0000, # This is auto-filled in by the driver.
                           :payload =>   $addedum
 
+$packets.randomize = true
+
 emit "ath0", "madwifing", $packets

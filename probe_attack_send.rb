@@ -35,5 +35,7 @@ $probes = PacketSet.new(Dot11,
                         :sc =>        0x0000, # This is auto-filled in by the driver.
                         :payload =>   $probe_addedum)
 
+$probes.randomize = true
+
 emit "ath0", "madwifing", $probes
 

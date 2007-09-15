@@ -10,10 +10,11 @@ module BaflleSend
     case stuff
       when PacketSet
         local_mac = nil #0xbaaaad000000
-        stuff.each do |packet|
+        stuff.each_with_index do |packet, index|
           local_mac ||= packet.addr2.to_i
+          local_mac = (local_mac & 0xFFFFFFFF0000) | index
           packet.addr2 = local_mac
-          local_mac += 1
+
 
           send_p packet.data
           sleep 0.5

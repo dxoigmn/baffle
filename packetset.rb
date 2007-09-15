@@ -2,6 +2,7 @@ class PacketSet
   Pair = Struct.new(:name, :value)
   
   attr_accessor :packet_class
+  attr_accessor :randomize
   
   def initialize(klass, parameters)
     @fields = []
@@ -53,13 +54,35 @@ class PacketSet
   end
   
   def each(prefix = [])
-    size.times do |i|
-      yield self[i]
+    if @randomize
+      random_indices = (0..size).entries.sort_by { rand }
+
+      size.times do |i|
+        yield self[random_indices[i]]
+      end
+    else
+	    size.times do |i|
+	      yield self[i]
+	    end
     end
+  end
+  
+  def each_with_index
+    if @randomize
+      random_indices = (0..size).entries.sort_by { rand }
+
+      size.times do |i|
+        yield self[random_indices[i]], random_indices[i]
+      end
+    else
+	    size.times do |i|
+	      yield self[i], i
+	    end
+    end  
   end
 
   def include?(packet)
-    # This is horrrrrribly inefficient.
+    # This is horrrrrribly inefficient (but we never use it, so it's ok)
     each do |pkt|
       return true if packet == pkt
     end
