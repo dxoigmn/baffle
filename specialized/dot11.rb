@@ -448,10 +448,6 @@ end
 class Dot11EltRates < Dot11Elt
   element_id 1
   
-  def initialize(rates = [])
-    
-  end
-  
   def rates
     return @rates if @rates
 
