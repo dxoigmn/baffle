@@ -53,12 +53,9 @@ class PacketSet
     @field_sizes.inject(1) { |product, size| size * product }
   end
   
-  def each(prefix = [])
-    indices = 0..size
-    indices = indices.entries.sort_by { rand } if @randomize
-
-    indices.times do |i|
-      yield self[i]
+  def each
+    each_with_index do |packet, index|
+      yield packet
     end
   end
   
