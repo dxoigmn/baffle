@@ -31,7 +31,34 @@ $packets = PacketSet.new(Dot11,
 
 $packets.randomize = true
 
-p $packets.size
+# we are looking for station to come up
+
+# start receiving each |packet|
+  # check if packet is from station to ap, next otherwise
+
+  # if we are looking for station to come up
+    # if packet is a data frame
+      # now we are not looking for station to come up
+      # now we are not looking for packets
+    # else
+      # next
+  
+  # if we are not looking for packets
+    # send a fake deauth packet
+    # now we are looking for packets and packet counter is 0
+    # next
+  
+  # if packet is a data frame
+    # mark the station as ignoring for specfied deauth reason code
+    # now we are not looking for packets
+  # else if packet is assoc frame
+    # mark the station as trying to reassociate for specified deauth reason code
+    # now we are looking for station to come up
+  # else if packet counter is greater than 2000 (note that this needs to be tweaked)
+    # mark the station as dead for specified deauth reason code
+    # now we are looking for station to come up
+  # else
+    # add 1 to packet counter
 
 emit "ath0", "madwifing", $packets
 
