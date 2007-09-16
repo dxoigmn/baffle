@@ -54,31 +54,21 @@ class PacketSet
   end
   
   def each(prefix = [])
-    if @randomize
-      random_indices = (0..size).entries.sort_by { rand }
+    indices = 0..size
+    indices = indices.entries.sort_by { rand } if @randomize
 
-      size.times do |i|
-        yield self[random_indices[i]]
-      end
-    else
-	    size.times do |i|
-	      yield self[i]
-	    end
+    indices.times do |i|
+      yield self[i]
     end
   end
   
   def each_with_index
-    if @randomize
-      random_indices = (0..size).entries.sort_by { rand }
-
-      size.times do |i|
-        yield self[random_indices[i]], random_indices[i]
-      end
-    else
-	    size.times do |i|
-	      yield self[i], i
-	    end
-    end  
+    indices = 0..size
+    indices = indices.entries.sort_by { rand } if @randomize
+  
+    indices.each do |i|
+      yield self[i], i
+    end
   end
 
   def include?(packet)
