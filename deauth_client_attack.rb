@@ -31,17 +31,24 @@ $packets = PacketSet.new(Dot11,
 
 $packets.randomize = true
 
-@deauths = []
-
-$packets.each do |packet|
-  @deauths << packet
-end
-
 @station_up     = false
 @deauth         = nil
 @saw_deauth     = false
 @packet_counter = 0
-@results        = {}
+
+@state_file = File.open('state.dump', 'rw')
+
+@state = Marshal.load(@state_file)
+
+if @state.nil?
+	@state = [[], {}]
+	$packets.each do |packet|
+	  @state[0] << packet
+	end
+end
+
+@deauths = @state[0] 
+@results = @state[1]
 
 puts "Waiting for station to come up..."
 
@@ -97,9 +104,14 @@ sniff "ath0" do |packet|
       @packet_counter += 1
     end
   end
+  
+  # Save our progress
+  Marshal.dump(@state, @state_file)
 end
 
-puts "flags,event"
+
+@state_file.close
+puts "reasoncode,event"
 
 @results.each do |flags, event|
   puts "#{flags},#{event.to_s}"

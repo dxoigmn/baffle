@@ -363,7 +363,7 @@ class Dot11Elt < Packet
   end
   
   def data
-    buffer = [id, info_length].pack("CC")
+	buffer = [id, info_length].pack("CC")
     
     buffer += info
   end
