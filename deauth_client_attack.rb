@@ -7,7 +7,7 @@ require "baflle-send"
 #$airport    = "00:11:24:5c:7b:07"
 
 if ARGV.length < 2
-  puts "Usage: ./deauth_client_attack_send.rb [target station mac] [associated ap mac]"
+  puts "Usage: ./deauth_client_attack.rb [target station mac] [associated ap mac]"
   exit
 end
 
