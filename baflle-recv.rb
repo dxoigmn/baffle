@@ -3,8 +3,8 @@ require "capture"
 require "specialized/dot11"
 
 module BaflleRecv  
-  def sniff(interface)
-    Capture.open(interface) do |capture|
+  def sniff(*params)
+    Capture.open(*params) do |capture|
       capture.each do |packet|
         packet = packet[0..-5]
         packet = Radiotap.new(packet)
