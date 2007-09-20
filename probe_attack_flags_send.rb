@@ -36,6 +36,6 @@ $probes = PacketSet.new(Dot11,
                         :payload =>   $probe_addedum)
 
 $probes.randomize = true
-
+puts "sending #{$probes.size} probes"
 emit "ath0", "madwifing", $probes
 

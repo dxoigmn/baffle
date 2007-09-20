@@ -15,7 +15,7 @@ end
 $station    = ARGV[0]
 $ap         = ARGV[1]
 
-$deauth = PacketSet.new(Dot11Deauth, :reason => 1)
+$deauth = PacketSet.new(Dot11Deauth, :reason => 5)
 
 $packets = PacketSet.new(Dot11, 
                         :subtype =>   0xC,
@@ -36,11 +36,12 @@ $packets.randomize = true
 @saw_deauth     = false
 @packet_counter = 0
 
-@state_file = File.open('state.dump', 'rw')
+@state_file = File.open('state.dump', File::CREAT | File::RDWR) 
 
-@state = Marshal.load(@state_file)
-
-if @state.nil?
+if File.size('state.dump') > 0
+  puts "Loading previous state..."
+  @state = Marshal.load(@state_file)
+else
 	@state = [[], {}]
 	$packets.each do |packet|
 	  @state[0] << packet
@@ -54,7 +55,7 @@ puts "Waiting for station to come up..."
 
 sniff "ath0" do |packet|
   @packet_counter += 1
-  
+
   next unless (packet.addr1.to_s == $ap && packet.addr2.to_s == $station) ||
               (packet.addr1.to_s == $station && packet.addr2.to_s == $ap)
 

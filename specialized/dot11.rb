@@ -32,12 +32,28 @@ class MACAddress
     @address.map{|byte| "%02x" % byte}.join(":")
   end
   
+  def inspect
+    to_s
+  end
+  
   def to_arr
     @address
   end
   
+  def [](index)
+    @address[index]
+  end
+  
   def eql?(other)
-    self.to_i == other.to_i
+    to_i == other.to_i
+  end
+  
+  def ==(other)
+    eql?(other)
+  end
+  
+  def hash
+    to_i.hash
   end
 end
 
@@ -66,7 +82,7 @@ end
 class Dot11 < Packet
   @@TYPENAMES = [["association request", "association response", "reassociation request", "reassociation response", "probe request", "probe response", "reserved0", "reserved1", "beacon", "ATIM", "disassociation", "authorization", "deauthorization", "reserved2", "reserved3", "reserved4"],
                  ["reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7", "reserved8", "PS-poll", "RTS", "CTS", "ACK", "CF-end", "CF-end + CF-ack"],
-                 ["data", "data + CF-ack", "data + CF-poll", "data + CF-ack + CF-poll", "null funciton (no data)", "CF-ack (no data)", "CF-poll (no data)", "CF-ack + CF-poll (no data)", "reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7"],
+                 ["data", "data + CF-ack", "data + CF-poll", "data + CF-ack + CF-poll", "null function (no data)", "CF-ack (no data)", "CF-poll (no data)", "CF-ack + CF-poll (no data)", "reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7"],
                  ["reserved0", "reserved1", "reserved2", "reserved3", "reserved4", "reserved5", "reserved6", "reserved7", "reserved8", "reserved9", "reserved10", "reserved11", "reserved12", "reserved13", "reserved14", "reserved15"]]
   
   def subtype
@@ -286,11 +302,17 @@ class Dot11 < Packet
         Dot11Beacon, Dot11ATIM, Dot11Disas, Dot11Auth, Dot11Deauth, nil, nil, nil,
         nil, nil, nil, nil, nil, nil, nil, nil,
         nil, nil, nil, nil, nil, nil, nil ][@subtype]
+    elsif @type == 2
+      if @subtype == 0
+        Dot11Data
+      elsif @subtype == 4
+        Dot11NullData
+      end  
     end
     
     return nil if payload_class.nil?
         
-    @payload = payload_class.new(@rest) unless @rest.nil? || @rest.empty?
+    @payload = payload_class.new(@rest) unless (!payload_class == Dot11NullData && (@rest.nil? || @rest.empty?))
   end
   
   private
@@ -487,13 +509,23 @@ class Dot11EltESR < Dot11Elt
   def to_s
     "Dot11EltESR\n" + 
     "------------------\n" +
-    "id: ............ 1\n" +
+    "id: ............ 50\n" +
     "info_length: ... #{info_length}\n" + 
     "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
   end  
 end
 
 module Dot11EltContainer
+  def elements_by_id
+    hash = {}
+    
+    elements.each do |element|
+      hash[element.id] = element
+    end
+    
+    hash
+  end
+
   def elements
     if @elements.nil?
       @elements = []
@@ -818,6 +850,14 @@ class Dot11Auth < Packet
     buffer += element_data
   end
   
+  def to_s
+    "Dot11Auth\n" + 
+    "-------------\n" + 
+    "algo: #{algo}\n" +
+    "seqnum: #{seqnum}\n" +
+    "status: #{status}\n"  
+  end
+  
   private
   
   def dissect(data)
@@ -851,6 +891,53 @@ class Dot11Deauth < Packet
   end  
 end
 
+class Dot11Data < Packet
+  attr_accessor :payload
+  
+  def data
+    payload.data
+  end
+
+  def to_s
+    "Dot11Data\n" + 
+    "-------------\n" + 
+    "payload: \n#{payload.to_s.indent(6)}\n"  
+  end
+  
+  def payload
+    return @payload if @payload
+    
+    @payload = LLC.new(@rest)
+  end
+  
+  def /(other)
+    @payload = other
+    self
+  end  
+  
+  private
+  
+  def dissect(data)
+    @rest = data
+  end
+end
+
+class Dot11NullData < Packet
+  def data
+    ""
+  end
+  
+  def to_s
+    "Dot11NullData\n"
+  end
+  
+  private
+  
+  def dissect(data)
+    @rest = data
+  end
+end
+
 class Dot11WEP < Packet
   def data
 
@@ -867,6 +954,100 @@ class Dot11WEP < Packet
   def dissect(data)
     @rest = data
   end    
+end
+
+class LLC < Packet
+  attr_accessor :dsap, :ssap, :control, :payload
+  
+  def data
+    [dsap, ssap, control].pack("CCC") + payload.data
+  end
+  
+  def to_s
+    "LLC\n" + 
+    "-------------\n" + 
+    "dsap: #{dsap}\n" +
+    "ssap: #{ssap}\n" +
+    "control: #{control}\n" +
+    (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
+  end
+  
+  def payload
+    return @payload if @payload
+    
+    @payload = SNAP.new(@rest)
+  end
+  
+  def /(other)
+    @payload = other
+    self
+  end  
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("CCC")
+    
+    @dsap = fields[0]
+    @ssap = fields[1]
+    @control = fields[2]
+
+    @rest = data[3..-1]  
+  end
+end
+
+class SNAP < Packet
+  attr_accessor :oui, :code, :payload
+  
+  def data
+    [oui, code].pack("QXv") + payload.data
+  end
+  
+  def to_s
+    "SNAP\n" +
+    "-------\n" +
+    "oui: #{oui}\n" +
+    "code: #{code}\n" + 
+    (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
+  end
+  
+  def payload
+    return @payload if @payload
+    
+    return @payload = Raw.new(@rest)
+  end
+  
+  def /(other)
+    @payload = other
+    self
+  end
+  
+  private
+  
+  def dissect(data)
+    fields = data.unpack("CCCv")
+
+    @oui = fields[0] << 16 | fields[1] << 8 | fields[2]
+    @code = fields[3]
+
+    @rest = data[4..-1]     
+  end
+end
+
+class Raw < Packet
+  attr_accessor :data
+  
+  def to_s
+    "Raw\n" +
+    "------\n" +
+    "data: #{data.inspect}\n"
+  end
+  
+  private
+  
+  def dissect(data)
+    @data = data
+  end
 end
 
 class Radiotap < Packet
