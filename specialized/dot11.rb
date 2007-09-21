@@ -803,7 +803,7 @@ class Dot11ProbeResp < Packet
   include Dot11EltContainer
   
   def data
-    buffer = [(timestamp & 0xFFFFFFFF00000000) >> 32, timestamp & 0xFFFFFFFF, beacon_interval, capabilities].pack("V2vn")
+    buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
     
     buffer += element_data
   end
