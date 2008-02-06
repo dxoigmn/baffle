@@ -2,6 +2,7 @@
 
 require 'rubygems'
 require 'choice'
+require 'SVM'
 
 BAFFLE_VERSION = "0.1a"
 
@@ -81,5 +82,3 @@ def parse_options
     end
   end
 end
-
-p Choice.methods.sort
