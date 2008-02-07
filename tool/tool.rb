@@ -1,84 +1,53 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
-require 'choice'
+require 'optparse'
 require 'SVM'
 
-BAFFLE_VERSION = "0.1a"
+class BaffleOptions
+  def self.parse(args)
+    options = {}
 
-def parse_options
-  Choice.options do
-    header ''
-    header 'Fingerprinting options:'
+    opts = OptionParser.new do |opts|
+      opts.program_name = "tool.rb"
+      opts.version      = "0.1"
+      opts.release      = "a"
+      
+      opts.banner = "Usage: #{opts.program_name} [options] ESSID|BSSID"
+
+      opts.separator("")
+      opts.separator("Fingerprinting options:")
+      opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options[:interface] = interface }
+      opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options[:inject] = interface }
+      opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options[:capture] = interface }
   
-    option :mac do
-      short '-m'
-      long '--mac=MAC'
-      desc 'The MAC address of the device to probe'
+      opts.separator("")
+      opts.separator("Training options:")
+      opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options[:train] = true}
+
+      opts.separator("")
+      opts.separator("Common options:")
+      opts.on("-v", "--verbose", "More detailed output") { options[:verbose] = true }
+      opts.on("-?", "--help", "Show this message") { puts opts.help; exit }
+      opts.on("--version", "Print the version") { puts opts.ver; exit }
     end
-  
-    option :essid do
-      short '-e'
-      long '--essid=ESSID'
-      desc 'The ESSID of the network to probe'
+    
+    value = opts.parse!(args).first
+
+    if value =~ /^([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$/
+      options[:bssid] = value
+    else
+      options[:essid] = value
     end
-  
-    option :interface do
-      short '-i'
-      long '--interface'
-      desc 'The interface to use for both injection and capture'
+    
+    unless options[:bssid] || options[:essid]
+      puts opts.help 
+      exit
     end
-  
-    option :inject_interface do
-      short '-j'
-      long '--inject'
-      desc 'The interface to use for injection'
-    end
-  
-    option :capture_interface do
-      short '-c'
-      long '--capture'
-      desc 'The interface to use for capture'
-    end
-  
-    separator ''
-    separator 'Training options'
-  
-    option :train do
-      short '-t'
-      long '--train'
-      desc "Train baffle with a new device fingerprint"
-      default false
-    end
-  
-    separator ''
-    separator 'Common options: '
-  
-    option :verbose do
-      short '-v'
-      long '--verbose=LEVEL'
-      desc 'Set verbosity level'
-      cast Integer
-      default 0
-    end
-  
-    option :help do
-      short '-?'
-      long '--help'
-      desc 'Show this message'
-      action do 
-        Choice.help
-        exit
-      end
-    end
-  
-    option :version do
-      long '--version'
-      desc 'Print the version'
-      action do
-        puts "#{$0} version #{BAFFLE_VERSION}"
-        exit
-      end
-    end
+    
+    options
   end
 end
+
+options = BaffleOptions.parse(ARGV)
+p options
