@@ -44,5 +44,22 @@ module Baffle
         mapping
       end
     end
+    
+    @@classifications = []
+    
+    def self.classify(name, vector)
+      @@classifications << [name, vector]
+    end
+    
+    def classify(vector)
+      @@classifications.inject({}) do |hash, classification|
+        name        = classification[0]
+        vector      = classification[1]
+        confidence  = 0.5 # TODO: Actually calculate confidence
+        
+        hash[name]  = confidence
+        hash
+      end
+    end
   end
 end

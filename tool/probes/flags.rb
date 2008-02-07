@@ -5,12 +5,12 @@ module Baffle
     class Flags < Baffle::Probe
       inject Baffle::Dot11::Broadcast.new(:flags => 1..255)
 
-      capture(false) do |packet|
-        { packet.flags => true }
+      capture(0) do |packet|
+        { packet.flags => 1 }
       end
       
       # TODO: Should have a classifier in here as well, e.g.:
-      # classify "Linksys", [true, false, true,...]
+      classify "Linksys", [1, 0, 1]
     end
   end
 end
