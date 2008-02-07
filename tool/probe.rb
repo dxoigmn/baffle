@@ -1,3 +1,17 @@
+require 'matrix'
+
+class Vector
+  def magnitude
+    sumsqs = 0.0
+    
+    self.size.times do |i|
+      sumsqs += self[i] ** 2.0
+    end
+    
+    Math.sqrt(sumsqs)
+  end
+end
+
 module Baffle
   module Probes
     def self.load
@@ -45,21 +59,17 @@ module Baffle
       end
     end
     
-    @@classifications = []
+    @@training_data = []
     
-    def self.classify(name, vector)
-      @@classifications << [name, vector]
+    def self.train(name, vector)
+      @@training_data << [name, vector]
     end
     
     def classify(vector)
-      @@classifications.inject({}) do |hash, classification|
+      @@training_data.inject({}) do |hash, classification|
         name        = classification[0]
         cvector     = classification[1]
-        
-        # TODO: Really calculate confidence...
-        confidence  = (vector == cvector ? 1 : 0)
-        
-        hash[name]  = confidence
+        hash[name]  = (Vector[*cvector] - Vector[*vector]).magnitude
         hash
       end
     end

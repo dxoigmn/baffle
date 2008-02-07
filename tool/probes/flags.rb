@@ -9,7 +9,7 @@ module Baffle
         { packet.flags => 1 }
       end
       
-      classify "Linksys", [1, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+      train "Linksys", [1, 0, 0, 0, 0, 0, 0, 0, 0, 1]
     end
   end
 end
