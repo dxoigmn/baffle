@@ -5,8 +5,12 @@ module Baffle
         @options = options
       end
       
+      def size
+        10
+      end
+      
       def each
-        10.times do |i|
+        (0...size).each do |i|
           yield i
         end
       end

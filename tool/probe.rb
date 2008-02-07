@@ -22,11 +22,11 @@ module Baffle
   
   class Probe
     def self.inject(packets)
+      @@size = packets.size
+      
       define_method(:inject) do |options|
-        puts "Using options: #{options}"
-        
         packets.each do |packet|
-          puts "Would send packet #{packet}"
+          # TODO: Send packet using options
         end
       end
     end
@@ -41,7 +41,7 @@ module Baffle
           mapping.merge!(yield(packet))
         end
         
-        mapping
+        (0...@@size).map { |key| mapping[key] }
       end
     end
     
@@ -54,8 +54,10 @@ module Baffle
     def classify(vector)
       @@classifications.inject({}) do |hash, classification|
         name        = classification[0]
-        vector      = classification[1]
-        confidence  = 0.5 # TODO: Actually calculate confidence
+        cvector     = classification[1]
+        
+        # TODO: Really calculate confidence...
+        confidence  = (vector == cvector ? 1 : 0)
         
         hash[name]  = confidence
         hash
