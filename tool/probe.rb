@@ -21,6 +21,13 @@ module Baffle
   end
   
   class Probe
-    # TODO: Create DSL for probes.
+    def self.send(packets)
+      define_method(:run) do |options|
+        p options
+        packets.each do |packet|
+          p packet
+        end
+      end
+    end
   end
 end
