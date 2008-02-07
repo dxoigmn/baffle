@@ -26,21 +26,22 @@ static VALUE cFilter;
 static VALUE cCaptureStat;
 
 struct filter_object {
-	char *expr;
-	struct bpf_program program;
-	int datalink;
-	int snaplen;
-	VALUE optimize;
-	VALUE capture;
-	VALUE netmask;
+	char                *expr;
+	struct bpf_program  program;
+	int                 datalink;
+	int                 snaplen;
+	VALUE               optimize;
+	VALUE               capture;
+	VALUE               netmask;
 };
 
 struct capture_object {
-    pcap_t		*pcap;
-	int			limit;			
-    bpf_u_int32	netmask;
-    int			dl_type;	/* data-link type (DLT_*) */
-	VALUE		dissector;
+  pcap_t		    *pcap;
+  pcap_dumper_t *dumper;
+	int			      limit;			
+  bpf_u_int32	  netmask;
+  int			      dl_type;	/* data-link type (DLT_*) */
+	VALUE		      dissector;
 };
 
 #define GetFilter(obj, filter) Data_Get_Struct(obj, struct filter_object, filter)
@@ -89,6 +90,10 @@ static VALUE capture_close(VALUE self) {
 
     DEBUG_PRINT("capture_close");
     GetCapture(self, cap);
+    
+    if (cap->dumper) {
+      pcap_dump_close(cap->dumper);
+    }
 
     rb_thread_fd_close(pcap_fileno(cap->pcap));
     pcap_close(cap->pcap);
@@ -137,8 +142,9 @@ static VALUE capture_setdissector(VALUE self, VALUE dissector) {
 }
 
 static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
-	VALUE v_device, v_snaplen = Qnil, v_promisc = Qnil, v_to_ms = Qnil, v_filter = Qnil, v_limit = Qnil, v_dissector = Qnil;
+  VALUE v_device, v_snaplen = Qnil, v_promisc = Qnil, v_to_ms = Qnil, v_filter = Qnil, v_limit = Qnil, v_dissector = Qnil, v_dump = Qnil;
 	char *device;
+  char *dump;
 	int snaplen, promisc, to_ms;
 	int rs;
 	VALUE self;
@@ -149,22 +155,21 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 	DEBUG_PRINT("capture_open_live");
 
 	/* scan arg */
-	rs = rb_scan_args(argc, argv, "13", &v_device, &v_snaplen,
-		&v_promisc, &v_to_ms);
+	rs = rb_scan_args(argc, argv, "13", &v_device, &v_snaplen,&v_promisc, &v_to_ms);
 
 	if (IsKindOf(v_device, rb_cHash)) {
-		v_snaplen = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("snapshot_length")));
-		v_to_ms = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("timeout")));
-		v_promisc = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("promiscuous")));
-		v_limit = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("limit")));
-		v_filter = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("filter")));
+		v_snaplen   = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("snapshot_length")));
+		v_to_ms     = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("timeout")));
+		v_promisc   = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("promiscuous")));
+		v_limit     = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("limit")));
+		v_filter    = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("filter")));
 		v_dissector = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("dissector")));
+    v_dump      = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("dump")));
+		v_device    = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("device")));
 		
-		v_device = rb_funcall(v_device, rb_intern("[]"), 1, ID2SYM(rb_intern("device")));
-		
-		if (v_device == Qnil)
+		if (v_device == Qnil) {
 			rb_raise(rb_eArgError, ":device must be specified");
-		
+		}
 	}
 	
 	/* device */
@@ -179,8 +184,9 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 		snaplen = DEFAULT_SNAPLEN;
 	}
 
-	if (snaplen <  0)
+	if (snaplen <  0) {
 		rb_raise(rb_eArgError, "invalid snaplen");
+	}
 	
 	/* promisc */
 	if (v_promisc != Qnil) {
@@ -193,14 +199,17 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 	if (v_to_ms != Qnil) {
 		Check_Type(v_to_ms, T_FIXNUM);
 		to_ms = FIX2INT(v_to_ms);
-	} else
+	} else {
 		to_ms = DEFAULT_TO_MS;
-	
+	}
+		
 	/* open */
 	pcap = pcap_open_live(device, snaplen, promisc, to_ms, pcap_errbuf);
+	
 	if (pcap == NULL) {
 		rb_raise(eCaptureError, "%s", pcap_errbuf);
 	}
+	
 	if (pcap_lookupnet(device, &net, &netmask, pcap_errbuf) == -1) {
 		netmask = 0;
 		rb_warning("cannot lookup net: %s\n", pcap_errbuf);
@@ -211,15 +220,22 @@ static VALUE capture_open(int argc, VALUE *argv, VALUE class) {
 	cap->pcap = pcap;
 	cap->netmask = netmask;
 	cap->dl_type = pcap_datalink(pcap);
-	
 	capture_setdissector(self, v_dissector);
+
+  if (v_dump != Qnil) {
+    Check_Type(v_dump, T_STRING);
+    cap->dumper = pcap_dump_open(cap->pcap, RSTRING(v_dump)->ptr);
+  } else {
+    cap->dumper = NULL;
+  }
 	
 	if (v_limit != Qnil) {
 		Check_Type(v_limit, T_FIXNUM);
 		cap->limit = FIX2INT(v_limit);
-	} else
+	} else {
 		cap->limit = -1;
-
+  }
+  
 	if (v_filter != Qnil) {
 		capture_setfilter(self, v_filter);
 	}
@@ -283,22 +299,28 @@ static VALUE capture_dispatch(int argc, VALUE *argv, VALUE self) {
 	DEBUG_PRINT("capture_dispatch");
 	GetCapture(self, cap);
 
-	VALUE proc = rb_block_proc();
+  if (cap->dumper == NULL) {
+    rb_raise(rb_eRuntimeError, "No dump file specified, use each to retrieve packets.");
+  }
+
+	/*VALUE proc = rb_block_proc();
 	VALUE v_arity = rb_funcall(proc, rb_intern("arity"), 0);
 		
 	int arity = FIX2INT(v_arity);
-
+  
 	pcap_handler handler = (arity < 2) ? (pcap_handler)handler1 : (pcap_handler)handler2;
-
+  */
+  
 	/* scan arg */
 	if (rb_scan_args(argc, argv, "01", &v_cnt) >= 1) {
 		FIXNUM_P(v_cnt);
 		cnt = FIX2INT(v_cnt);
-	} else
+	} else {
 		cnt = -1;
-
+  }
+  
 	TRAP_BEG;
-	ret = pcap_dispatch(cap->pcap, cnt, handler, (u_char *)cap);
+	ret = pcap_dispatch(cap->pcap, cnt, pcap_dump, (u_char *)cap->dumper);
 	TRAP_END;
 	
 	if (ret == -1)
@@ -308,14 +330,14 @@ static VALUE capture_dispatch(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE capture_loop(int argc, VALUE *argv, VALUE self) {
-    VALUE v_cnt;
-    int cnt;
-    struct capture_object *cap;
-    int ret;
+  VALUE v_cnt;
+  int cnt;
+  struct capture_object *cap;
+  int ret;
 
-    DEBUG_PRINT("capture_loop");
-    GetCapture(self, cap);
-	
+  DEBUG_PRINT("capture_loop");
+  GetCapture(self, cap);
+
 	VALUE proc = rb_block_proc();
 	VALUE v_arity = rb_funcall(proc, rb_intern("arity"), 0);
 		
@@ -323,7 +345,7 @@ static VALUE capture_loop(int argc, VALUE *argv, VALUE self) {
 
 	pcap_handler handler = (arity < 2) ? (pcap_handler)handler1 : (pcap_handler)handler2;
 
-    /* scan arg */
+  /* scan arg */
 	if (rb_scan_args(argc, argv, "01", &v_cnt) >= 1) {
 		FIXNUM_P(v_cnt);
 		cnt = FIX2INT(v_cnt);

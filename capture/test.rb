@@ -2,8 +2,12 @@
 
 require 'capture'
 
-Capture.open :device => (ARGV[0] || 'ath0'), :limit => 10 do |capture|
-  capture.each do |packet|
-    p packet
+capture = Capture.open(:device => (ARGV[0] || 'ath0'), :dump => 'dump') do |capture|
+  (1..10).each do
+    print '.'
+    STDOUT.flush 
+    capture.dispatch
   end
+  
+  puts
 end
