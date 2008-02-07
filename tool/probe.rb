@@ -21,12 +21,27 @@ module Baffle
   end
   
   class Probe
-    def self.send(packets)
-      define_method(:run) do |options|
-        p options
+    def self.inject(packets)
+      define_method(:inject) do |options|
+        puts "Using options: #{options}"
+        
         packets.each do |packet|
-          p packet
+          puts "Would send packet #{packet}"
         end
+      end
+    end
+    
+    def self.capture(default = nil)
+      fail unless block_given?
+      
+      define_method(:capture) do |packets|
+        mapping = Hash.new(default)
+        
+        packets.each do |packet|
+          mapping.merge!(yield(packet))
+        end
+        
+        mapping
       end
     end
   end
