@@ -3,6 +3,8 @@ require File.join(File.dirname(__FILE__), "..", "probe.rb")
 module Baffle
   module Probes
     class Flags < Baffle::Probe
+      filter "wlan[0] == 0x00"
+      
       inject Baffle::Dot11::Broadcast.new(:flags => 0..9)
 
       capture(0) do |packet|

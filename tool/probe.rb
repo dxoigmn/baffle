@@ -35,6 +35,12 @@ module Baffle
   end
   
   class Probe
+    def self.filter(filter)
+      define_method(:filter) do
+        filter
+      end
+    end
+    
     def self.inject(packets)
       @@size = packets.size
       
