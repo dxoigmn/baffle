@@ -17,7 +17,7 @@ module Baffle
         opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options[:interface] = interface }
         opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options[:inject] = interface }
         opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options[:capture] = interface }
-  
+        opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options[:driver] = driver }
         opts.separator("")
         opts.separator("Training options:")
         opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options[:train] = true}
