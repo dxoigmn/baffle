@@ -44,6 +44,10 @@ module Baffle
     def capture(filter, &block)
       @capture_filters << [filter, block]
     end
+    
+    def timeout(&block)
+      @capture_filters << [:timeout, block]
+    end
 
     def train(name, vector)
       @training_data << [name, vector]
