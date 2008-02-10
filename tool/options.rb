@@ -20,7 +20,7 @@ module Baffle
         opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options[:driver] = driver }
         opts.separator("")
         opts.separator("Training options:")
-        opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options[:train] = true}
+        opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options[:train] = true }
 
         opts.separator("")
         opts.separator("Common options:")
