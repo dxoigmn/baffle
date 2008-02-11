@@ -33,6 +33,7 @@ module Baffle
     def initialize(name, &block)
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
+      @column_names     = []
       @injection_data   = nil
       @capture_filters  = []
 
@@ -54,7 +55,18 @@ module Baffle
     def train(name, vector)
       @training_data[name] << vector
       
-      m = GSL::Matrix[*@training_data.values]
+      # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
+      # (There are no guarantees that two iterations over the pairs in a hash will have the same order)
+      row_matrix, @column_names = @training_data.inject([[], []]) do |result, pair| 
+        result[0] += pair[1]
+        pair[1].length.times { result[1] << pair[0] }
+        result
+      end
+      
+      # We need a matrix of column vectors
+      column_matrix = row_matrix.tranpose
+            
+      m = GSL::Matrix[*column_matrix]
       
       u, vt, s = m.SV_decomp
       s = GSL::Matrix.diagonal(s)

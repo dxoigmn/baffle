@@ -21,7 +21,7 @@ beacon = Dot11.new(:type => 0,
                    :addr3 => "00:01:e3:41:bd:6e",
                    :sc => 0x0e00)
 
-  test(Dot11, beacon_raw, beacon, "beacon frame")
+test(Dot11, beacon_raw, beacon, "beacon frame")
 
 #####################################################################################
 
