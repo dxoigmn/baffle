@@ -1,4 +1,4 @@
-require 'gsl'
+require 'linalg'
 
 module Baffle
   module Probes
@@ -38,6 +38,9 @@ module Baffle
       @capture_filters  = []
 
       instance_eval(&block)
+      
+      # I think this is a good place to call learn... we should have all train samples by now
+      learn
     end
 
     def inject(packets)
@@ -56,6 +59,7 @@ module Baffle
       @training_data[name] << vector
     end
     
+    # Gets called when all training samples have been loaded
     def learn
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
       # (There are no guarantees that two iterations over the pairs in a hash will have the same order)
@@ -66,24 +70,24 @@ module Baffle
       end
       
       # We need a matrix of column vectors
-      column_matrix = row_matrix.tranpose
+      column_matrix = row_matrix.transpose
             
-      m = GSL::Matrix[*column_matrix]
+      m = Linalg::DMatrix[*column_matrix]
       
-      u, vt, s = m.SV_decomp
-      s = GSL::Matrix.diagonal(s)
+      u, s, vt = m.singular_value_decomposition
+      vt = vt.transpose
       
       # Do we want more than 2 dimensions? TODO: test other numbers of dimensions
-      @u2 = GSL::Matrix[u.column(0), u.column(1)]
-      @v2 = GSL::Matrix[vt.column(0), vt.column(1)]
-      @eig2 = GSL::Matrix[s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
+      @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1)]
+      @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1)]
+      @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
     end
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
     def hypothesize(vector)
       similarities = []
       
-      vector_embedded = vector * @@us2 ** @@eig2.inv
+      vector_embedded = vector * @@us2 * @@eig2.inv
       
       @@v2.each_row do |row|
         similarities << vector_embedded.dot(row) / (row.norm * vector_embedded.norm)
