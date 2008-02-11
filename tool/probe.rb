@@ -54,7 +54,9 @@ module Baffle
 
     def train(name, vector)
       @training_data[name] << vector
-      
+    end
+    
+    def learn
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
       # (There are no guarantees that two iterations over the pairs in a hash will have the same order)
       row_matrix, @column_names = @training_data.inject([[], []]) do |result, pair| 
@@ -74,7 +76,7 @@ module Baffle
       # Do we want more than 2 dimensions? TODO: test other numbers of dimensions
       @u2 = GSL::Matrix[u.column(0), u.column(1)]
       @v2 = GSL::Matrix[vt.column(0), vt.column(1)]
-      @eig2 = GSL::Matrix[s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]] 
+      @eig2 = GSL::Matrix[s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
     end
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
