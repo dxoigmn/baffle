@@ -427,46 +427,138 @@ static VALUE capture_stats(VALUE self) {
 }
 
 static VALUE capture_getlimit(VALUE self) {
-    struct capture_object *cap;
-    GetCapture(self, cap);
-	
-	return INT2FIX(cap->limit);
+  struct capture_object *cap;
+  GetCapture(self, cap);
+
+  return INT2FIX(cap->limit);
 }
 
-static VALUE capture_setlimit(VALUE self, VALUE limit) {
-    Check_Type(limit, T_FIXNUM);
 
-	struct capture_object *cap;
-    GetCapture(self, cap);
-	
-	cap->limit = FIX2INT(limit);
-	
-	return limit;	
+static VALUE capture_setlimit(VALUE self, VALUE limit) {
+  Check_Type(limit, T_FIXNUM);
+
+  struct capture_object *cap;
+  GetCapture(self, cap);
+
+  cap->limit = FIX2INT(limit);
+
+  return limit;	
 }
 
 static VALUE capture_getdissector(VALUE self) {
-    struct capture_object *cap;
-    GetCapture(self, cap);
-	
-	return cap->dissector;
+  struct capture_object *cap;
+  GetCapture(self, cap);
+
+  return cap->dissector;
 }
 
 /*
-static VALUE filter_getexpression(VALUE self) {
-	struct filter_object *filter;
-	
-	GetFilter(self, filter);
-	return rb_str_new2(filter->expr);
+ * Filter object
+ */
+
+/* called from GC */
+static void mark_filter(struct filter_object *filter) {
+  rb_gc_mark(filter->capture);
+  rb_gc_mark(filter->optimize);
+  rb_gc_mark(filter->netmask);
 }
 
-static VALUE filter_setexpression(VALUE self, VALUE expression) {
-	
-	return expression;
+static void
+free_filter(struct filter_object *filter) {
+  free(filter->expr);
+  free(filter);
+  /*
+  * This causes amemory leak because filter->program holds some memory.
+  * We overlook it because libpcap does not implement pcap_freecode().
+  */
 }
 
-static VALUE filter_optimize(VALUE self) {
-	
-	return Qnil;
+static VALUE filter_new(int argc, VALUE *argv, VALUE class) {
+  VALUE self, v_expr, v_optimize, v_capture, v_netmask;
+  struct filter_object *filter;
+  struct capture_object *capture;
+  pcap_t *pcap;
+  char *expr;
+  int n, optimize, snaplen, linktype;
+  bpf_u_int32 netmask;
+
+  n = rb_scan_args(argc, argv, "13", &v_expr, &v_capture, &v_optimize, &v_netmask);
+  
+    /* filter expression */
+  Check_Type(v_expr, T_STRING);
+  expr = STR2CSTR(v_expr);
+  
+  /* capture object */
+  if (IsKindOf(v_capture, cCapture)) {
+    CheckClass(v_capture, cCapture);
+    GetCapture(v_capture, capture);
+    pcap                      = capture->pcap;
+  } else if (NIL_P(v_capture)) {
+  /* assume most common case */
+    snaplen                   = DEFAULT_SNAPLEN;
+    linktype                  = DEFAULT_DATALINK;
+    pcap                      = 0;
+  } else {
+    snaplen                   = NUM2INT(rb_funcall(v_capture, rb_intern("[]"), 1, INT2FIX(0)));
+    linktype                  = NUM2INT(rb_funcall(v_capture, rb_intern("[]"), 1, INT2FIX(1)));
+    pcap                      = 0;
+  }
+    /* optimize flag */
+  optimize = 1;
+  if (n >= 3) {
+    optimize = RTEST(v_optimize);
+  }
+    /* netmask */
+  netmask = 0;
+  if (n >= 4) {
+    bpf_u_int32 mask = NUM2UINT(v_netmask);
+    netmask = htonl(mask);
+  }
+
+  filter = (struct filter_object *)xmalloc(sizeof(struct filter_object));
+  if (pcap) {
+    if (pcap_compile(pcap, &filter->program, expr, optimize, netmask) < 0)
+      rb_raise(eCaptureError, "%s", pcap_geterr(pcap));
+      
+    filter->datalink = pcap_datalink(pcap);
+    filter->snaplen = pcap_snapshot(pcap);
+    
+  } else {
+    
+    if (pcap_compile_nopcap(snaplen, linktype, &filter->program, expr, optimize, netmask) < 0)
+      /* libpcap-0.5 provides no error report for pcap_compile_nopcap */
+      rb_raise(eCaptureError, "pcap_compile_nopcap error");
+    filter->datalink          = linktype;
+    filter->snaplen           = snaplen;
+  }
+  self                   = Data_Wrap_Struct(class, mark_filter, free_filter, filter);
+  filter->expr           = strdup(expr);
+  filter->capture        = v_capture;
+  filter->optimize       = optimize ? Qtrue : Qfalse;
+  filter->netmask        = INT2NUM(ntohl(netmask));
+
+  return self;
+}
+
+VALUE filter_match(VALUE self, VALUE v_pkt) {
+  struct filter_object *filter;
+  struct packet_object *pkt;
+
+  GetFilter(self, filter);
+
+  int v_pkt_len = RSTRING(v_pkt)->len;
+  if (bpf_filter(filter->program.bf_insns, (unsigned char *)StringValuePtr(v_pkt), v_pkt_len, v_pkt_len))
+    return Qtrue;
+  else
+    return Qfalse;
+}
+
+
+static VALUE filter_source(VALUE self) {
+    struct filter_object *filter;
+
+    GetFilter(self, filter);
+    return rb_str_new2(filter->expr);
 }
 
 static VALUE filter_or(VALUE self, VALUE other) {
@@ -504,45 +596,46 @@ static VALUE filter_not(VALUE self) {
     sprintf(expr, "not ( %s )", filter->expr);
     return new_filter(expr, filter->capture, filter->optimize, filter->netmask);
 }
-*/
+
 
 void Init_capture() {
-	cCapture = rb_define_class("Capture", rb_cObject);
-	cFilter = rb_define_class_under(cCapture, "Filter", rb_cObject);
+  cCapture = rb_define_class("Capture", rb_cObject);
+  cFilter = rb_define_class_under(cCapture, "Filter", rb_cObject);
 
-	rb_include_module(cCapture, rb_mEnumerable);	
-	rb_define_singleton_method(cCapture, "open", capture_open, -1);
-    rb_define_singleton_method(cCapture, "open_offline", capture_open_offline, 1);
-    rb_define_method(cCapture, "close", capture_close, 0);
-    rb_define_method(cCapture, "dispatch", capture_dispatch, -1);
-    rb_define_method(cCapture, "each", capture_loop, -1);
-    rb_define_method(cCapture, "each_packet", capture_loop, -1);
-    rb_define_method(cCapture, "filter=", capture_setfilter, 1);
-	rb_define_method(cCapture, "limit", capture_getlimit, 0);
-	rb_define_method(cCapture, "limit=", capture_setlimit, 1);
-	rb_define_method(cCapture, "dissector", capture_getdissector, 0);
-	rb_define_method(cCapture, "dissector=", capture_setdissector, 0);
-    rb_define_method(cCapture, "datalink", capture_datalink, 0);
-	rb_define_method(cCapture, "snapshot_length", capture_snapshot, 0);
-    rb_define_method(cCapture, "stats", capture_stats, 0);
+  rb_include_module(cCapture, rb_mEnumerable);	
+  rb_define_singleton_method(cCapture, "open", capture_open, -1);
+  rb_define_singleton_method(cCapture, "open_offline", capture_open_offline, 1);
+  rb_define_method(cCapture, "close", capture_close, 0);
+  rb_define_method(cCapture, "dispatch", capture_dispatch, -1);
+  rb_define_method(cCapture, "each", capture_loop, -1);
+  rb_define_method(cCapture, "each_packet", capture_loop, -1);
+  rb_define_method(cCapture, "filter=", capture_setfilter, 1);
+  rb_define_method(cCapture, "limit", capture_getlimit, 0);
+  rb_define_method(cCapture, "limit=", capture_setlimit, 1);
+  rb_define_method(cCapture, "dissector", capture_getdissector, 0);
+  rb_define_method(cCapture, "dissector=", capture_setdissector, 0);
+  rb_define_method(cCapture, "datalink", capture_datalink, 0);
+  rb_define_method(cCapture, "snapshot_length", capture_snapshot, 0);
+  rb_define_method(cCapture, "stats", capture_stats, 0);
 
-	/*
-	rb_define_method(cFilter, "expression", filter_getexpression, 0);
-	rb_define_method(cFilter, "expression=", filter_setexpression, 1);
-	rb_define_method(cFilter, "optimize!", filter_optimize, 0);
-    rb_define_method(cFilter, "|", filter_or, 1);
-    rb_define_method(cFilter, "&", filter_and, 1);
-    rb_define_method(cFilter, "~@", filter_not, 0);
-	*/
-	
-    cCaptureStat = rb_funcall(rb_cStruct, rb_intern("new"), 4,
-			   	   Qnil,
-				   ID2SYM(rb_intern("recv")),
-				   ID2SYM(rb_intern("drop")),
-				   ID2SYM(rb_intern("ifdrop")));
-    rb_define_const(cCapture, "Stat", cCaptureStat);
+  rb_define_singleton_method(cFilter, "new", filter_new, -1);
+  //rb_define_method(cFilter, "expression", filter_getexpression, 0);
+  //rb_define_method(cFilter, "expression=", filter_setexpression, 1);
+  //rb_define_method(cFilter, "optimize!", filter_optimize, 0);
+  rb_define_method(cFilter, "|", filter_or, 1);
+  rb_define_method(cFilter, "&", filter_and, 1);
+  rb_define_method(cFilter, "~@", filter_not, 0);
+  rb_define_method(cFilter, "=~", filter_match, 1);
+  rb_define_method(cFilter, "===", filter_match, 1);
+
+  cCaptureStat = rb_funcall(rb_cStruct, rb_intern("new"), 4,
+    Qnil,
+    ID2SYM(rb_intern("recv")),
+    ID2SYM(rb_intern("drop")),
+    ID2SYM(rb_intern("ifdrop")));
+  rb_define_const(cCapture, "Stat", cCaptureStat);
 
     /* define exception classes */
-    eCaptureError    = rb_define_class_under(cCapture, "CaptureError", rb_eStandardError);
-    eTruncatedPacket = rb_define_class_under(cCapture, "TruncatedPacket", eCaptureError);
+  eCaptureError    = rb_define_class_under(cCapture, "CaptureError", rb_eStandardError);
+  eTruncatedPacket = rb_define_class_under(cCapture, "TruncatedPacket", eCaptureError);
 }
