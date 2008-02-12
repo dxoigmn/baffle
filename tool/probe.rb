@@ -44,6 +44,12 @@ module Baffle
     end
     
     def run
+      listen do
+        
+      end
+    end
+    
+    def listen
       
     end
 
@@ -52,7 +58,7 @@ module Baffle
     end
 
     def capture(filter, &block)
-      @capture_filters << [filter, block]
+      @capture_filters << [Capture::Filter.new(filter), block]
     end
     
     def timeout(&block)

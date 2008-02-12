@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
+$: << 'lib'
 require File.join(File.dirname(__FILE__), 'options')
 require File.join(File.dirname(__FILE__), 'probe')
-require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
+require 'dot11/dot11'
 
 module Baffle
   def self.run(args)

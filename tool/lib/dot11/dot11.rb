@@ -1,5 +1,5 @@
 # TODO: Implement lazy mac decomposition too
-require 'packetset'
+require 'dot11/packetset'
 
 class String
   def indent(depth)
@@ -42,8 +42,8 @@ module Baffle
       @address
     end
   
-    def [](index)
-      @address[index]
+    def [](*index)
+      @address[*index]
     end
   
     def eql?(other)
@@ -91,6 +91,13 @@ module Baffle
       
         return true
       end
+    end
+    
+    def to_filter
+      PacketSet.new(self.class, self.instance_variables.inject({}) do |accum, var| 
+        accum[var[1..-1].intern] = self.instance_variable_get(var).kind_of?(MACAddress) ? self.instance_variable_get(var).to_s : self.instance_variable_get(var).to_s
+        accum
+      end).to_filter
     end
   end
 
@@ -209,8 +216,6 @@ module Baffle
     end
 
     def data
-      buffer = ""
-    
       buffer = [(subtype << 4) | (type << 2) | version, flags, duration].concat(addr1.to_arr).pack("CCSC6")
     
       if (type == 1 && [0x0a, 0x0b, 0x0e, 0x0f].include?(subtype)) || (type != 1)
@@ -328,6 +333,23 @@ module Baffle
       return nil if payload_class.nil?
         
       @payload = payload_class.new(@rest) unless (payload_class == Dot11NullData || @rest.nil? || @rest.empty?)
+    end
+    
+    def self.fields()
+      # Why can't ruby have ordered maps??
+      # The offsets are unnecessary but removing them would have been even more complicated
+      # TODO: remove offsets and compute possible offsets for each field automatically
+      [[:subtype, {:type => :int, :offset => 0, :size => 1, :bitrange => 4..7}],
+       [:type, {:type => :int, :offset => 0, :size => 1, :bitrange => 2..3}],
+       [:version, {:type => :int, :offset => 0, :size => 1, :bitrange => 0..1}], 
+       [:flags, {:type => :int, :offset => 1, :size => 1}],
+       [:duration, {:type => :int, :offset => 2, :size => 2}], 
+       [:addr1, {:type => :mac, :offset => 4, :size => 6}],
+       # Ugly syntax! TODO: come up with a better way to represent negation than a one-element array
+       [:addr2, {:type => :mac, :offset => 10, :size => 6, :condition => [{:subtype => [0x0a, 0x0b, 0x0e, 0x0f]}, {:type => [1]}]}],
+       [:addr3, {:type => :mac, :offset => {[{:subtype => [0x0a, 0x0b, 0x0e, 0x0f]}, {:type => [1]}] => 16, :else => 10}, :size => 6, :condition => {:type => [0, 2]}}],
+       #[:sc, {:type => :int, :size => 2, :offset => {}, => :condition => {:type => [1]}}]
+       ]
     end
   
     private

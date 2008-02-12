@@ -1,4 +1,4 @@
-require 'dot11'
+require 'dot11/dot11'
 
 include Baffle
 

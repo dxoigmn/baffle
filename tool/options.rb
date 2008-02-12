@@ -10,6 +10,7 @@ module Baffle
     attr_accessor :verbose
     attr_accessor :fpdiagram
     attr_accessor :plot_prefix
+    attr_accessor :bssid, :essid
 
     def initialize
       @inject   = 'ath0'
@@ -56,6 +57,8 @@ module Baffle
         opts.on("-v", "--verbose", "More detailed output") { options.verbose = true }
         opts.on("-?", "--help", "Show this message") { puts opts.help; exit }
         opts.on("--version", "Print the version") { puts opts.ver; exit }
+        
+        opts.separator("")
       end
     
       value = opts.parse!(args).first
