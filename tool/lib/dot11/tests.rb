@@ -1,5 +1,7 @@
 require 'dot11'
 
+include Baffle
+
 def test(klass, raw, packet, test_desc)
   dissector = (klass.new(raw) == packet)
   builder = (packet.data == raw)
