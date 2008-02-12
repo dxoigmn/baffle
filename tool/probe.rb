@@ -33,7 +33,7 @@ module Baffle
     def initialize(name, &block)
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
-      @column_names     = []
+      @names            = []
       @injection_data   = nil
       @capture_filters  = []
 
@@ -62,8 +62,8 @@ module Baffle
     # Gets called when all training samples have been loaded
     def learn
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
-      # (There are no guarantees that two iterations over the pairs in a hash will have the same order)
-      row_matrix, @column_names = @training_data.inject([[], []]) do |result, pair| 
+      # (there are no guarantees that two iterations over the pairs in a hash will have the same order)
+      row_matrix, @names = @training_data.inject([[], []]) do |result, pair| 
         result[0] += pair[1]
         pair[1].length.times { result[1] << pair[0] }
         result
@@ -85,16 +85,17 @@ module Baffle
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
     def hypothesize(vector)
-      similarities = []
+      similarities = Hash.new{|hash, key| hash[key] = []}
       
-      vector_embedded = vector * @@us2 * @@eig2.inv
+      vector_embedded = vector * @u2 * @eig2.inv
       
-      @@v2.each_row do |row|
-        similarities << vector_embedded.dot(row) / (row.norm * vector_embedded.norm)
+      @v2.rows.each_with_index do |row, i|
+        similarities[@names[i]] << vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)
       end
       
       # TODO: un-hardcode the constant rejection distance
       similarities.reject{|k, sim| sim < 0.9}.sort_by{|x| x[1]}
+      
       
     end
   end
