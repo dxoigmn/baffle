@@ -1,13 +1,15 @@
 require 'optparse'
 
 module Baffle
-  class Options < Hash
+  class Options
     attr_accessor :inject
     attr_accessor :capture
     attr_accessor :driver
     attr_accessor :channel
     attr_accessor :train
     attr_accessor :verbose
+    attr_accessor :fpdiagram
+    attr_accessor :plot_prefix
 
     def initialize
       @inject   = 'ath0'
@@ -34,24 +36,24 @@ module Baffle
 
         opts.separator("")
         opts.separator("Fingerprinting options:")
-        opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options[:interface] = interface }
-        opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options[:inject] = interface }
-        opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options[:capture] = interface }
-        opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options[:driver] = driver }
-        opts.on("-c CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options[:channel] = channel }
+        opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options.interface = interface }
+        opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options.inject = interface }
+        opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options.capture = interface }
+        opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options.driver = driver }
+        opts.on("-c CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options.channel = channel }
 
         opts.separator("")
         opts.separator("Output options:")
-        opts.on("-f SVGFILE", "--fpdiagram SVGFILE", "Write a fingerprint diagram to SVGFILE") { |svgfile| options[:fpdiagram] = svgfile }
-        opts.on("-p SVGPREFIX", "--plot SVGPREFIX", "Write a plot file for each probe used, using SVGPREFIX") { |svgfile| options[:plot_prefix] = svgfile }
+        opts.on("-f SVGFILE", "--fpdiagram SVGFILE", "Write a fingerprint diagram to SVGFILE") { |svgfile| options.fpdiagram = svgfile }
+        opts.on("-p SVGPREFIX", "--plot SVGPREFIX", "Write a plot file for each probe used, using SVGPREFIX") { |svgfile| options.plot_prefix = svgfile }
         
         opts.separator("")
         opts.separator("Training options:")
-        opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options[:train] = true }
+        opts.on("-t", "--train", "Train baffle with a new device fingerprint") { options.train = true }
 
         opts.separator("")
         opts.separator("Common options:")
-        opts.on("-v", "--verbose", "More detailed output") { options[:verbose] = true }
+        opts.on("-v", "--verbose", "More detailed output") { options.verbose = true }
         opts.on("-?", "--help", "Show this message") { puts opts.help; exit }
         opts.on("--version", "Print the version") { puts opts.ver; exit }
       end
@@ -59,12 +61,12 @@ module Baffle
       value = opts.parse!(args).first
 
       if value =~ /^([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$/
-        options[:bssid] = value
+        options.bssid = value
       else
-        options[:essid] = value
+        options.essid = value
       end
     
-      unless options[:bssid] || options[:essid]
+      unless options.bssid || options.essid
         puts opts.help 
         exit
       end
