@@ -10,4 +10,5 @@ probe "flags" do
   end
   
   train "Linksys", [1, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+  train "Apple", [1, 1, 1, 0, 0, 0, 0, 1, 1, 0]
 end

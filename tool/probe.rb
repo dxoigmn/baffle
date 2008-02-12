@@ -39,8 +39,12 @@ module Baffle
 
       instance_eval(&block)
       
-      # I think this is a good place to call learn... we should have all train samples by now
+      # I think this is a good place to call learn... we should have all training samples by now
       learn
+    end
+    
+    def run
+      
     end
 
     def inject(packets)
@@ -61,6 +65,10 @@ module Baffle
     
     # Gets called when all training samples have been loaded
     def learn
+      # The code below assumes at least two training values, and doing it with any fewer
+      # doesn't make much sense anyway
+      return if @training_data.size < 2
+      
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
       # (there are no guarantees that two iterations over the pairs in a hash will have the same order)
       row_matrix, @names = @training_data.inject([[], []]) do |result, pair| 
@@ -95,7 +103,6 @@ module Baffle
       
       # TODO: un-hardcode the constant rejection distance
       similarities.reject{|k, sim| sim < 0.9}.sort_by{|x| x[1]}
-      
       
     end
   end

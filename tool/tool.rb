@@ -8,7 +8,7 @@ module Baffle
     @options = Baffle::Options.parse(ARGV)
     
     Baffle::Probes.each do |probe|
-      p probe
+      probe.run
     end
   end
 end
