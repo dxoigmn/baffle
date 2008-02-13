@@ -15,13 +15,19 @@ it done in the following manner:
   
 You will need to run these commands in:
   
-  - ./capture/
-  - ./ruby-lorcon/
+  - ./lib/capture/
+  - ./lib/ruby-lorcon/
+
+Linalg depends on LAPACK, a fortran linear algebra package, and on f2c, a 
+fortran to C bridge. These can typically be installed from package management
+systems or compiled from source.
+The ruby linalg library itself is compiled with the following commands:
+
+  ruby install.rb configure
+  ruby install.rb make
+  sudo ruby install.rb install
 
 Once those dependencies are met, everything should work fine.
-
-TODO: Add blurb about installing linalg since it depends on something I cannot
-current get working on my machine.
 
 == Depedencies ==
 
@@ -29,5 +35,8 @@ current get working on my machine.
   - lorcon
   - libpcap
   
+  Fortran libraries
+  - LAPACK
+
   Ruby libraries
-  - linalg
+  - linalg (depends on the LAPACK fortran library and f2c library)
