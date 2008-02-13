@@ -561,14 +561,6 @@ VALUE filter_match(VALUE self, VALUE v_pkt) {
     return Qfalse;
 }
 
-
-static VALUE filter_source(VALUE self) {
-    struct filter_object *filter;
-
-    GetFilter(self, filter);
-    return rb_str_new2(filter->expr);
-}
-
 /*
 static VALUE filter_or(VALUE self, VALUE other) {
     struct filter_object *filter, *filter2;
