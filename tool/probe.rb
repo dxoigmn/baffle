@@ -40,6 +40,7 @@ module Baffle
       @names            = []
       @injection_data   = nil
       @capture_filters  = []
+      @repeat           = 1
 
       instance_eval(&block)
       
@@ -48,30 +49,43 @@ module Baffle
     end
     
     def run
-      sniff_thread = sniff(@options.capture) do |packet|
-        @capture_filters.each do |filter|
-          if filter[0] =~ packet.data
-            filter[1].call(packet)
+      @samples = []
+      @repeat.times do |i|
+        @samples[i] = Hash.new(0)
+        sniff_thread = sniff(@options.capture) do |packet|
+          @capture_filters.each do |filter|
+            if filter[0] =~ packet.data
+              @samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
+            end
           end
         end
+        
+        Baffle::emit(@options.inject, @options.driver, @options.channel, @injection_data, @options.fast? ? 0.1 : 0.5)
+        sniff_thread.kill
       end
       
-      Baffle::emit(@options.inject, @options.driver, @options.channel, @injection_data, @options.fast? ? 0.1 : 0.5)
-      
-      sniff_thread.kill
+      @compute_vector.call(@samples)
     end
     
     def sniff(capture_if, &block)
-      Thread.new do
+      thread = Thread.new do
         # We want to only listen for packets that match the filters we've defined
         filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
-        p filter
+        
         Baffle::sniff(:device => capture_if, :filter => filter, &block)
       end
+      
+      # Replace with a condition variable or something to be less wasteful of time
+      sleep 0.5
+      thread
     end
 
     def inject(packets)
       @injection_data = packets
+    end
+    
+    def compute_vector(&block)
+      @compute_vector = block
     end
 
     def capture(filter, &block)
@@ -87,6 +101,10 @@ module Baffle
       end
       
       @capture_filters << [Capture::Filter.new(filter.to_filter), block]
+    end
+    
+    def repeat(count)
+      @repeat = count
     end
     
     def timeout(&block)

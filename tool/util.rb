@@ -10,8 +10,10 @@ module Baffle
         local_mac = nil #0xbaaaad000000
         stuff.each_with_index do |packet, index|
           local_mac ||= packet.addr2.to_i
-          #local_mac = (local_mac & 0xFFFFFFFF0000) | index
+          local_mac = (local_mac & 0xFFFFFFFF0000) | index
           packet.addr2 = local_mac
+          #puts "emitting"
+          #p packet
 
           send_p packet.data
           sleep sleep_interval

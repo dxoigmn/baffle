@@ -16,11 +16,15 @@ module Baffle
   class MACAddress
     include Comparable
   
+    attr_accessor :prefix_length  
+  
     def initialize(address)
       if address.kind_of?(Integer)
         @address = [address].pack("Q").unpack("C8")[0, 6].reverse
-      elsif address.kind_of?(String)
-        @address = address.split(":").map {|octet| octet.to_i(16)}
+      elsif address.kind_of?(String) && address =~ /^(.*?)(?:\/(.*))?$/
+        @prefix_length = $2.to_i
+        
+        @address = $1.split(":").map {|octet| octet.to_i(16)}
       elsif address.kind_of?(Array)
         @address = address
       end 
@@ -31,7 +35,7 @@ module Baffle
     end
   
     def to_s
-      @address.map{|byte| "%02x" % byte}.join(":")
+      @address.map{|byte| "%02x" % byte}.join(":") + (@prefix_length == 0 ? "" : "/#{@prefix_length}")
     end
   
     def inspect

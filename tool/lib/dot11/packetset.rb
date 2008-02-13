@@ -106,7 +106,7 @@ module Baffle
       when Numeric
         "#{value} #{negated ? '!' : ''}= #{'%#x' % desired}"
       else
-        raise "unknown"  
+        raise "unknown desired: #{desired.inspect}"  
       end      
     end
     
@@ -129,7 +129,12 @@ module Baffle
         first_four = desired[0, 4].pack("CCCC").unpack("N")[0]
         second_two = desired[4, 2].pack("CC").unpack("n")[0]
         
-        "(ether[#{offset}:4] = #{'%#x' % first_four} && ether[#{offset + 4}:2] = #{'%#x' % second_two})"
+        
+        if desired.prefix_length == 32
+          "ether[#{offset}:4] = #{'%#x' % first_four}"
+        else
+          "(ether[#{offset}:4] = #{'%#x' % first_four} && ether[#{offset + 4}:2] = #{'%#x' % second_two})"
+        end
       else
         raise "unknown"  
       end
@@ -162,7 +167,7 @@ module Baffle
       end
     end
   
-    def to_filter      
+    def to_filter
       fields = @packet_class.fields
 
       @fields.map do |field|
