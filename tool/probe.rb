@@ -1,3 +1,6 @@
+require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
+require File.join(File.dirname(__FILE__), 'lib/capture/capture')
+require File.join(File.dirname(__FILE__), 'util')
 require 'linalg'
 
 module Baffle
@@ -12,7 +15,8 @@ module Baffle
       @probes = []
       
       Dir[File.join(File.dirname(__FILE__), "probes", "*.rb")].each do |file|
-        require file
+        Kernel.load file
+        #eval(File.read(file))
       end
       
       @probes
@@ -43,14 +47,27 @@ module Baffle
       learn
     end
     
-    def run
-      listen do
-        
+    def run(inject_if, capture_if)
+      sniff_thread = sniff(capture_if) do |packet|
+        @capture_filters.each do |filter|
+          if filter[0] =~ packet
+            filter[1].call(packet)
+          end
+        end
       end
+      
+      Baffle::emit(@injection_data)
+      
+      sniff_thread.kill
     end
     
-    def listen
+    def sniff(capture_if, &block)
+      Thread.new do
+        # We want to only listen for packets that match the filters we've defined
+        filter = @capture_filters.map{|filter| "(#{filter[0]})"}.join(" || ")
       
+        Baffle::sniff(:interface => capture_if, :filter => filter, &block)
+      end
     end
 
     def inject(packets)
@@ -58,7 +75,18 @@ module Baffle
     end
 
     def capture(filter, &block)
-      @capture_filters << [Capture::Filter.new(filter), block]
+      case filter
+      when Packet
+        if !filter.kind_of?(Dot11)
+          filter = PacketSet.new(Dot11, :payload => filter)
+        end
+      when PacketSet
+        if filter.packet_class != Dot11
+          filter = PacketSet.new(Dot11, :payload => filter)
+        end
+      end
+      
+      @capture_filters << [Capture::Filter.new(filter.to_filter), block]
     end
     
     def timeout(&block)

@@ -1,5 +1,5 @@
 # TODO: Implement lazy mac decomposition too
-require 'dot11/packetset'
+require File.join(File.dirname(__FILE__), 'packetset')
 
 class String
   def indent(depth)
@@ -410,664 +410,663 @@ module Baffle
       end
     end
 
-  end
+    class Dot11Elt < Packet
+      attr_accessor :id, :info_length, :info
 
-  class Dot11Elt < Packet
-    attr_accessor :id, :info_length, :info
-  
-    def Dot11Elt.register_element(id, klass)
-      @@registered_elements ||= {}
-    
-      @@registered_elements[id] = klass
-    end
-  
-    def data
-  	buffer = [id, info_length].pack("CC")
-    
-      buffer += info
-    end
-  
-    def to_s
-      "Dot11Elt\n" + 
-      "------------\n" +
-      "id: ............ #{id}\n" + 
-      "info_length: ... #{info_length}\n" +
-      "info: .......... #{info.inspect}\n"
-    end
-  
-    private 
-  
-    def dissect(data)
-      fields = data.unpack("CC")
-    
-      @id = fields[0]
-      @info_length = fields[1]
-    
-      @info = data[2, @info_length]
-    
-      @rest = data[2 + @info_length..-1]
-    end
-  
-    class << self    
-      # Hook into new to "subclass on the fly"
-      alias old_new new
-    
-      def new(parameters)
-        return old_new(parameters) if self != Dot11Elt
+      def Dot11Elt.register_element(id, klass)
+        @@registered_elements ||= {}
 
-        if parameters.kind_of?(String)
-          elt_id = parameters.unpack("C")[0]
-
-          if @@registered_elements && @@registered_elements[elt_id]
-            return @@registered_elements[elt_id].new(parameters)
-          else
-            elt = Dot11Elt.allocate
-            elt.send(:initialize, parameters)
-          
-            return elt
-          end
-        
-        elsif parameters.kind_of?(Hash)
-        
-          if @@registered_elements && @@registered_elements[parameters[:id]]
-             return @@registered_elements[parameters[:id]].new(parameters)
-           else
-             elt = Dot11Elt.allocate
-             elt.send(:initialize, parameters)
-
-             return elt
-           end    
-        end      
-      
+        @@registered_elements[id] = klass
       end
-    
-      def element_id(id)
-        @id = id
-        Dot11Elt.register_element(id, self)
+
+      def data
+    	buffer = [id, info_length].pack("CC")
+
+        buffer += info
       end
-    end
-  end
 
-  class Dot11EltSSID < Dot11Elt
-    element_id 0
-  
-    def essid
-      return @info
-    end
-  
-    def to_s
-      "Dot11EltSSID\n" + 
-      "-------------\n" +
-      "id: ............ 0\n" +
-      "info_length: ... #{info_length}\n" + 
-      "essid: ......... #{info.inspect} (#{essid})\n"
-    end
-  end
-
-  class Dot11EltRates < Dot11Elt
-    element_id 1
-  
-    def rates
-      return @rates if @rates
-
-      @rates = []
-    
-      @info.each_byte do |b|
-        @rates << (b & 0x7f) / 2
+      def to_s
+        "Dot11Elt\n" + 
+        "------------\n" +
+        "id: ............ #{id}\n" + 
+        "info_length: ... #{info_length}\n" +
+        "info: .......... #{info.inspect}\n"
       end
-    
-      @rates
-    end
-  
-    def to_s
-      "Dot11EltRates\n" + 
-      "------------------\n" +
-      "id: ............ 1\n" +
-      "info_length: ... #{info_length}\n" + 
-      "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
-    end
-  end
 
-  class Dot11EltESR < Dot11Elt
-    element_id 50
-  
-    def rates
-      return @rates if @rates
+      private 
 
-      @rates = []
-    
-      @info.each_byte do |b|
-        @rates << (b & 0x7f) / 2
+      def dissect(data)
+        fields = data.unpack("CC")
+
+        @id = fields[0]
+        @info_length = fields[1]
+
+        @info = data[2, @info_length]
+
+        @rest = data[2 + @info_length..-1]
       end
-    
-      @rates    
-    end
-  
-    def to_s
-      "Dot11EltESR\n" + 
-      "------------------\n" +
-      "id: ............ 50\n" +
-      "info_length: ... #{info_length}\n" + 
-      "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
-    end  
-  end
 
-  module Dot11EltContainer
-    def elements_by_id
-      hash = {}
-    
-      elements.each do |element|
-        hash[element.id] = element
-      end
-    
-      hash
-    end
+      class << self    
+        # Hook into new to "subclass on the fly"
+        alias old_new new
 
-    def elements
-      if @elements.nil?
-        @elements = []
-      
-        if @rest
-          dissect_elements(@rest)
+        def new(parameters)
+          return old_new(parameters) if self != Dot11Elt
+
+          if parameters.kind_of?(String)
+            elt_id = parameters.unpack("C")[0]
+
+            if @@registered_elements && @@registered_elements[elt_id]
+              return @@registered_elements[elt_id].new(parameters)
+            else
+              elt = Dot11Elt.allocate
+              elt.send(:initialize, parameters)
+
+              return elt
+            end
+
+          elsif parameters.kind_of?(Hash)
+
+            if @@registered_elements && @@registered_elements[parameters[:id]]
+               return @@registered_elements[parameters[:id]].new(parameters)
+             else
+               elt = Dot11Elt.allocate
+               elt.send(:initialize, parameters)
+
+               return elt
+             end    
+          end      
+
         end
-      
-        return @elements      
+
+        def element_id(id)
+          @id = id
+          Dot11Elt.register_element(id, self)
+        end
       end
-    
-      @elements
     end
-  
-    def element_data
-      buffer = ""
-        
-      elements.each do |element|
-        buffer += element.data
+
+    class Dot11EltSSID < Dot11Elt
+      element_id 0
+
+      def essid
+        return @info
       end
-    
-      buffer
-    end
-  
-    def element_to_s
-      buffer = ""
-    
-      elements.each do |element|
-        buffer += element.to_s + "\n"
+
+      def to_s
+        "Dot11EltSSID\n" + 
+        "-------------\n" +
+        "id: ............ 0\n" +
+        "info_length: ... #{info_length}\n" + 
+        "essid: ......... #{info.inspect} (#{essid})\n"
       end
-    
-      buffer
     end
-  
-    def /(other)
-      elements << other
-    
-      self
-    end
-  
-    private
-  
-    def dissect_elements(data)
-      @elements = []
-    
-      current_pos = 0
-    
-      while current_pos < data.length
-        info_length = data[current_pos, 2].unpack("xC")[0]
-        total_elt_length = 2 + info_length
-        
-        @elements << Dot11Elt.new(data[current_pos, total_elt_length])
-      
-        current_pos += total_elt_length
+
+    class Dot11EltRates < Dot11Elt
+      element_id 1
+
+      def rates
+        return @rates if @rates
+
+        @rates = []
+
+        @info.each_byte do |b|
+          @rates << (b & 0x7f) / 2
+        end
+
+        @rates
       end
-    
-    end
-  end
 
-  class Dot11Beacon < Packet
-    attr_accessor :timestamp, :beacon_interval, :capabilities
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
-        
-      buffer += element_data
-    end
-  
-    def to_s
-      binary_caps = capabilities.to_s(2) 
-      cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
-      set_caps = []
-    
-      16.times do |i|
-        set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+      def to_s
+        "Dot11EltRates\n" + 
+        "------------------\n" +
+        "id: ............ 1\n" +
+        "info_length: ... #{info_length}\n" + 
+        "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
       end
-    
-      "Dot11Beacon\n" + 
-      "-------------------------\n" +
-      "timestamp: ......... #{timestamp}\n" +
-      "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
-      "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
-      "elements:\n" + 
-      element_to_s.indent(7)
     end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("V2vn")
-    
-      p fields
-    
-      @timestamp = (fields[1] << 32) | fields[0]
-      @beacon_interval = fields[2]
-      @capabilities = fields[3]
-        
-      @rest = data[12..-1]
-    end
-  end
 
-  class Dot11ATIM < Packet
-    def dissect(data)
-      raise "Not implemented"
-    end
-  end
+    class Dot11EltESR < Dot11Elt
+      element_id 50
 
-  class Dot11Disas < Packet
-    attr_accessor :reason
-  
-    def data
-      [reason].pack("v")
-    end
-  
-    def to_s
-      "Dot11Disas\n" + 
-      "-------------\n" + 
-      "reason: #{reason}\n"
-    end
-  
-    private
-  
-    def dissect(data)
-      @reason = data.unpack("v")[0]
-    end
-  end
+      def rates
+        return @rates if @rates
 
-  class Dot11AssoReq < Packet
-    attr_accessor :capabilities, :listen_interval
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [capabilities, listen_interval].pack("nv")
-    
-      buffer += element_data
-    end
-  
-    def to_s
-      "Dot11AssoReq\n" +
-      "---------------\n" +
-      "capabilities: ...... #{capabilities}\n" +
-      "listen_interval: ... #{listen_interval}\n" + 
-      "elements:\n" + 
-      element_to_s.indent(7)    
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("nv")
-    
-      @capabilities = fields[0]
-      @listen_interval = fields[1]
-    
-      @rest = data[4..-1]
-    end
-  end
+        @rates = []
 
-  class Dot11AssoResp < Packet
-    attr_accessor :capabilities, :status, :aid
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [capabilities, status, aid].pack("nvv")
-    
-      buffer += element_data
-    end
-  
-    def to_s
-      "Dot11AssoResp\n" +
-      "---------------\n" +
-      "capabilities: ... #{capabilities}\n" +
-      "status: ......... #{status}\n" + 
-      "aid: ............ #{aid}\n" + 
-      "elements:\n" + 
-      element_to_s.indent(7)    
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("nvv")
-    
-      @capabilities = fields[0]
-      @status = fields[1]
-      @aid = fields[2]
-    
-      @rest = data[6..-1]
-    end
-  end
+        @info.each_byte do |b|
+          @rates << (b & 0x7f) / 2
+        end
 
-  class Dot11ReassoReq < Packet
-    attr_accessor :capabilities, :current_ap, :listen_interval
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [capabilities].concat(mac2array(current_ap)).concat([listen_interval]).pack("nC6v")
-    
-      buffer += element_data
-    end
-  
-    def to_s
-      "Dot11ReassoReq\n" +
-      "---------------\n" +
-      "capabilities: ...... #{capabilities}\n" +
-      "current_ap: ........ #{current_ap}\n" + 
-      "listen_interval: ... #{listen_interval}\n" + 
-      "elements:\n" + 
-      element_to_s.indent(7)
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("nC6v")
-    
-      @capabilities = fields[0]
-      @current_ap = Packet.array2mac(fields[1, 6])
-      @listen_interval = fields[7]
-    
-      @rest = data[10..-1]
-    end
-  end
-
-  class Dot11ReassoResp < Packet
-    include Dot11EltContainer
-  
-    def data
-      element_data
-    end
-  
-    def to_s
-      "Dot11ReassoResp\n" +
-      "---------------\n" +
-      "elements:\n" + 
-      element_to_s.indent(7)
-    end
-  
-    private
-  
-    def dissect(data)
-      @rest = data
-    end
-  end
-
-  class Dot11ProbeReq < Packet
-    include Dot11EltContainer
-  
-    def data
-      element_data
-    end
-  
-    def to_s
-      "Dot11ProbeReq\n" +
-      "---------------\n" +
-      "elements:\n" + 
-      element_to_s.indent(7)
-    end
-  
-    private
-  
-    def dissect(data)
-      @rest = data
-    end
-  end
-
-  class Dot11ProbeResp < Packet
-    attr_accessor :timestamp, :beacon_interval, :capabilities
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
-    
-      buffer += element_data
-    end
-  
-    def to_s
-      binary_caps = capabilities.to_s(2) 
-      cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
-      set_caps = []
-    
-      16.times do |i|
-        set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+        @rates    
       end
-    
-      "Dot11ProbeResp\n" + 
-      "-------------------------\n" +
-      "timestamp: ......... #{timestamp}\n" +
-      "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
-      "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
-      "elements:\n" + 
-      element_to_s.indent(7)    
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("V2vn")
-    
-      @timestamp = (fields[1] << 32) | fields[0]
-      @beacon_interval = fields[2]
-      @capabilities = fields[3]
-    
-      @rest = data[12..-1]
-    end  
-  end
 
-  class Dot11Auth < Packet
-    attr_accessor :algo, :seqnum, :status
-  
-    include Dot11EltContainer
-  
-    def data
-      buffer = [algo, seqnum, status].pack("vvv")
-    
-      buffer += element_data
-    end
-  
-    def to_s
-      "Dot11Auth\n" + 
-      "-------------\n" + 
-      "algo: #{algo}\n" +
-      "seqnum: #{seqnum}\n" +
-      "status: #{status}\n"  
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("vvv")
-    
-      @algo = fields[0]
-      @seqnum = fields[1]
-      @status = fields[2]
-    
-      @rest = data[6..-1]
-    end
-  end
-
-  class Dot11Deauth < Packet
-    attr_accessor :reason
-
-    def data
-      [reason].pack("v")
-    end
-  
-    def to_s
-      "Dot11Deauth\n" + 
-      "-------------\n" + 
-      "reason: #{reason}\n"
+      def to_s
+        "Dot11EltESR\n" + 
+        "------------------\n" +
+        "id: ............ 50\n" +
+        "info_length: ... #{info_length}\n" + 
+        "rates: ......... #{info.inspect} (#{rates.join(', ')})\n"
+      end  
     end
 
-    private
-  
-    def dissect(data)
-      @reason = data.unpack("v")[0]
-    end  
-  end
+    module Dot11EltContainer
+      def elements_by_id
+        hash = {}
 
-  class Dot11Data < Packet
-    attr_accessor :payload
-  
-    def data
-      payload.data
+        elements.each do |element|
+          hash[element.id] = element
+        end
+
+        hash
+      end
+
+      def elements
+        if @elements.nil?
+          @elements = []
+
+          if @rest
+            dissect_elements(@rest)
+          end
+
+          return @elements      
+        end
+
+        @elements
+      end
+
+      def element_data
+        buffer = ""
+
+        elements.each do |element|
+          buffer += element.data
+        end
+
+        buffer
+      end
+
+      def element_to_s
+        buffer = ""
+
+        elements.each do |element|
+          buffer += element.to_s + "\n"
+        end
+
+        buffer
+      end
+
+      def /(other)
+        elements << other
+
+        self
+      end
+
+      private
+
+      def dissect_elements(data)
+        @elements = []
+
+        current_pos = 0
+
+        while current_pos < data.length
+          info_length = data[current_pos, 2].unpack("xC")[0]
+          total_elt_length = 2 + info_length
+
+          @elements << Dot11Elt.new(data[current_pos, total_elt_length])
+
+          current_pos += total_elt_length
+        end
+
+      end
     end
 
-    def to_s
-      "Dot11Data\n" + 
-      "-------------\n" + 
-      "payload: \n#{payload.to_s.indent(6)}\n"  
-    end
-  
-    def payload
-      return @payload if @payload
-    
-      @payload = LLC.new(@rest)
-    end
-  
-    def /(other)
-      @payload = other
-      self
-    end  
-  
-    private
-  
-    def dissect(data)
-      @rest = data
-    end
-  end
+    class Dot11Beacon < Packet
+      attr_accessor :timestamp, :beacon_interval, :capabilities
 
-  class Dot11NullData < Packet
-    def data
-      ""
-    end
-  
-    def to_s
-      "Dot11NullData\n"
-    end
-  
-    private
-  
-    def dissect(data)
-      @rest = data
-    end
-  end
+      include Dot11EltContainer
 
-  class Dot11WEP < Packet
-    def data
+      def data
+        buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
 
-    end
-  
-    def to_s
-      "Dot11WEP\n" + 
-      "-------------\n" + 
-      "unknown\n"
+        buffer += element_data
+      end
+
+      def to_s
+        binary_caps = capabilities.to_s(2) 
+        cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
+        set_caps = []
+
+        16.times do |i|
+          set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+        end
+
+        "Dot11Beacon\n" + 
+        "-------------------------\n" +
+        "timestamp: ......... #{timestamp}\n" +
+        "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
+        "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
+        "elements:\n" + 
+        element_to_s.indent(7)
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("V2vn")
+
+        p fields
+
+        @timestamp = (fields[1] << 32) | fields[0]
+        @beacon_interval = fields[2]
+        @capabilities = fields[3]
+
+        @rest = data[12..-1]
+      end
     end
 
-    private
-  
-    def dissect(data)
-      @rest = data
-    end    
-  end
+    class Dot11ATIM < Packet
+      def dissect(data)
+        raise "Not implemented"
+      end
+    end
 
-  class LLC < Packet
-    attr_accessor :dsap, :ssap, :control, :payload
-  
-    def data
-      [dsap, ssap, control].pack("CCC") + payload.data
-    end
-  
-    def to_s
-      "LLC\n" + 
-      "-------------\n" + 
-      "dsap: #{dsap}\n" +
-      "ssap: #{ssap}\n" +
-      "control: #{control}\n" +
-      (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
-    end
-  
-    def payload
-      return @payload if @payload
-    
-      @payload = SNAP.new(@rest)
-    end
-  
-    def /(other)
-      @payload = other
-      self
-    end  
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("CCC")
-    
-      @dsap = fields[0]
-      @ssap = fields[1]
-      @control = fields[2]
+    class Dot11Disas < Packet
+      attr_accessor :reason
 
-      @rest = data[3..-1]  
-    end
-  end
+      def data
+        [reason].pack("v")
+      end
 
-  class SNAP < Packet
-    attr_accessor :oui, :code, :payload
-  
-    def data
-      [oui, code].pack("QXv") + payload.data
-    end
-  
-    def to_s
-      "SNAP\n" +
-      "-------\n" +
-      "oui: #{oui}\n" +
-      "code: #{code}\n" + 
-      (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
-    end
-  
-    def payload
-      return @payload if @payload
-    
-      return @payload = Raw.new(@rest)
-    end
-  
-    def /(other)
-      @payload = other
-      self
-    end
-  
-    private
-  
-    def dissect(data)
-      fields = data.unpack("CCCv")
+      def to_s
+        "Dot11Disas\n" + 
+        "-------------\n" + 
+        "reason: #{reason}\n"
+      end
 
-      @oui = fields[0] << 16 | fields[1] << 8 | fields[2]
-      @code = fields[3]
+      private
 
-      @rest = data[4..-1]     
+      def dissect(data)
+        @reason = data.unpack("v")[0]
+      end
+    end
+
+    class Dot11AssoReq < Packet
+      attr_accessor :capabilities, :listen_interval
+
+      include Dot11EltContainer
+
+      def data
+        buffer = [capabilities, listen_interval].pack("nv")
+
+        buffer += element_data
+      end
+
+      def to_s
+        "Dot11AssoReq\n" +
+        "---------------\n" +
+        "capabilities: ...... #{capabilities}\n" +
+        "listen_interval: ... #{listen_interval}\n" + 
+        "elements:\n" + 
+        element_to_s.indent(7)    
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("nv")
+
+        @capabilities = fields[0]
+        @listen_interval = fields[1]
+
+        @rest = data[4..-1]
+      end
+    end
+
+    class Dot11AssoResp < Packet
+      attr_accessor :capabilities, :status, :aid
+
+      include Dot11EltContainer
+
+      def data
+        buffer = [capabilities, status, aid].pack("nvv")
+
+        buffer += element_data
+      end
+
+      def to_s
+        "Dot11AssoResp\n" +
+        "---------------\n" +
+        "capabilities: ... #{capabilities}\n" +
+        "status: ......... #{status}\n" + 
+        "aid: ............ #{aid}\n" + 
+        "elements:\n" + 
+        element_to_s.indent(7)    
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("nvv")
+
+        @capabilities = fields[0]
+        @status = fields[1]
+        @aid = fields[2]
+
+        @rest = data[6..-1]
+      end
+    end
+
+    class Dot11ReassoReq < Packet
+      attr_accessor :capabilities, :current_ap, :listen_interval
+
+      include Dot11EltContainer
+
+      def data
+        buffer = [capabilities].concat(mac2array(current_ap)).concat([listen_interval]).pack("nC6v")
+
+        buffer += element_data
+      end
+
+      def to_s
+        "Dot11ReassoReq\n" +
+        "---------------\n" +
+        "capabilities: ...... #{capabilities}\n" +
+        "current_ap: ........ #{current_ap}\n" + 
+        "listen_interval: ... #{listen_interval}\n" + 
+        "elements:\n" + 
+        element_to_s.indent(7)
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("nC6v")
+
+        @capabilities = fields[0]
+        @current_ap = Packet.array2mac(fields[1, 6])
+        @listen_interval = fields[7]
+
+        @rest = data[10..-1]
+      end
+    end
+
+    class Dot11ReassoResp < Packet
+      include Dot11EltContainer
+
+      def data
+        element_data
+      end
+
+      def to_s
+        "Dot11ReassoResp\n" +
+        "---------------\n" +
+        "elements:\n" + 
+        element_to_s.indent(7)
+      end
+
+      private
+
+      def dissect(data)
+        @rest = data
+      end
+    end
+
+    class Dot11ProbeReq < Packet
+      include Dot11EltContainer
+
+      def data
+        element_data
+      end
+
+      def to_s
+        "Dot11ProbeReq\n" +
+        "---------------\n" +
+        "elements:\n" + 
+        element_to_s.indent(7)
+      end
+
+      private
+
+      def dissect(data)
+        @rest = data
+      end
+    end
+
+    class Dot11ProbeResp < Packet
+      attr_accessor :timestamp, :beacon_interval, :capabilities
+
+      include Dot11EltContainer
+
+      def data
+        buffer = [timestamp & 0xFFFFFFFF, (timestamp & 0xFFFFFFFF00000000) >> 32, beacon_interval, capabilities].pack("V2vn")
+
+        buffer += element_data
+      end
+
+      def to_s
+        binary_caps = capabilities.to_s(2) 
+        cap_names = ['ESS', 'IBSS', 'CF Pollable', 'CF Poll Request', 'Privacy', 'Reserved5', 'Reserved6', 'Reserved7', 'Reserved8', 'Reserved9', 'Reserved10', 'Reserved11', 'Reserved12', 'Reserved13', 'Reserved14', 'Reserved15', ]
+        set_caps = []
+
+        16.times do |i|
+          set_caps << cap_names[i] if binary_caps[15 -i] == ?1
+        end
+
+        "Dot11ProbeResp\n" + 
+        "-------------------------\n" +
+        "timestamp: ......... #{timestamp}\n" +
+        "beacon_interval: ... #{beacon_interval} (#{beacon_interval * 0.001024} seconds)\n" + 
+        "capabilities: ...... #{capabilities} (#{"0" * (16 - binary_caps.length) + binary_caps}#{if set_caps.size > 0 then ' : ' + set_caps.join(', ') else '' end})\n" +
+        "elements:\n" + 
+        element_to_s.indent(7)    
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("V2vn")
+
+        @timestamp = (fields[1] << 32) | fields[0]
+        @beacon_interval = fields[2]
+        @capabilities = fields[3]
+
+        @rest = data[12..-1]
+      end  
+    end
+
+    class Dot11Auth < Packet
+      attr_accessor :algo, :seqnum, :status
+
+      include Dot11EltContainer
+
+      def data
+        buffer = [algo, seqnum, status].pack("vvv")
+
+        buffer += element_data
+      end
+
+      def to_s
+        "Dot11Auth\n" + 
+        "-------------\n" + 
+        "algo: #{algo}\n" +
+        "seqnum: #{seqnum}\n" +
+        "status: #{status}\n"  
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("vvv")
+
+        @algo = fields[0]
+        @seqnum = fields[1]
+        @status = fields[2]
+
+        @rest = data[6..-1]
+      end
+    end
+
+    class Dot11Deauth < Packet
+      attr_accessor :reason
+
+      def data
+        [reason].pack("v")
+      end
+
+      def to_s
+        "Dot11Deauth\n" + 
+        "-------------\n" + 
+        "reason: #{reason}\n"
+      end
+
+      private
+
+      def dissect(data)
+        @reason = data.unpack("v")[0]
+      end  
+    end
+
+    class Dot11Data < Packet
+      attr_accessor :payload
+
+      def data
+        payload.data
+      end
+
+      def to_s
+        "Dot11Data\n" + 
+        "-------------\n" + 
+        "payload: \n#{payload.to_s.indent(6)}\n"  
+      end
+
+      def payload
+        return @payload if @payload
+
+        @payload = LLC.new(@rest)
+      end
+
+      def /(other)
+        @payload = other
+        self
+      end  
+
+      private
+
+      def dissect(data)
+        @rest = data
+      end
+    end
+
+    class Dot11NullData < Packet
+      def data
+        ""
+      end
+
+      def to_s
+        "Dot11NullData\n"
+      end
+
+      private
+
+      def dissect(data)
+        @rest = data
+      end
+    end
+
+    class Dot11WEP < Packet
+      def data
+
+      end
+
+      def to_s
+        "Dot11WEP\n" + 
+        "-------------\n" + 
+        "unknown\n"
+      end
+
+      private
+
+      def dissect(data)
+        @rest = data
+      end    
+    end
+
+    class LLC < Packet
+      attr_accessor :dsap, :ssap, :control, :payload
+
+      def data
+        [dsap, ssap, control].pack("CCC") + payload.data
+      end
+
+      def to_s
+        "LLC\n" + 
+        "-------------\n" + 
+        "dsap: #{dsap}\n" +
+        "ssap: #{ssap}\n" +
+        "control: #{control}\n" +
+        (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
+      end
+
+      def payload
+        return @payload if @payload
+
+        @payload = SNAP.new(@rest)
+      end
+
+      def /(other)
+        @payload = other
+        self
+      end  
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("CCC")
+
+        @dsap = fields[0]
+        @ssap = fields[1]
+        @control = fields[2]
+
+        @rest = data[3..-1]  
+      end
+    end
+
+    class SNAP < Packet
+      attr_accessor :oui, :code, :payload
+
+      def data
+        [oui, code].pack("QXv") + payload.data
+      end
+
+      def to_s
+        "SNAP\n" +
+        "-------\n" +
+        "oui: #{oui}\n" +
+        "code: #{code}\n" + 
+        (if payload then "payload:\n#{payload.to_s.indent(6)}" else "" end)
+      end
+
+      def payload
+        return @payload if @payload
+
+        return @payload = Raw.new(@rest)
+      end
+
+      def /(other)
+        @payload = other
+        self
+      end
+
+      private
+
+      def dissect(data)
+        fields = data.unpack("CCCv")
+
+        @oui = fields[0] << 16 | fields[1] << 8 | fields[2]
+        @code = fields[3]
+
+        @rest = data[4..-1]     
+      end
     end
   end
 

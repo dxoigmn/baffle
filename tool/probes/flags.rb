@@ -1,7 +1,7 @@
 probe "flags" do
-  inject Baffle::Dot11::ProbeRequest.new(:flags => 0..255)
+  inject Baffle::Dot11::Dot11ProbeReq.new(:flags => 0..255)
   
-  capture Baffle::Dot11::ProbeResponse.new do
+  capture Baffle::Dot11::Dot11ProbeResp.new do
      1
   end
   

@@ -149,10 +149,14 @@ module Baffle
   
     def to_filter      
       fields = @packet_class.fields
-            
+
       @fields.map do |field|
         '(' + begin
-          field_info = fields.find{|x| field.name == x[0]}[1]
+          field_info = fields.find{|x| field.name == x[0]}
+          
+          next if field_info.nil?
+          
+          field_info = field_info[1]
           
           # We don't really want to do this
           next if field_info.nil?
