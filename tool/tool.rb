@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$: << 'lib'
+$: << File.join(File.dirname(__FILE__), 'lib')
 require File.join(File.dirname(__FILE__), 'options')
 require File.join(File.dirname(__FILE__), 'probe')
 require 'dot11/dot11'

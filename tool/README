@@ -1,0 +1,33 @@
+===  Baffle ==
+
+Baffle is a tool for actively fingerprinting and identifying wireless devices.
+See ./tool --help for options.
+
+== Compiling ==
+
+Because we need to be able to sniff and inject arbitrary 802.11 packets, we
+need help from a few C-libraries (see Depedencies). Before running Baffle,
+you must compile the Ruby extensions wrapping these libraries. Generally, it
+it done in the following manner:
+
+  ruby extconf
+  make
+  
+You will need to run these commands in:
+  
+  - ./capture/
+  - ./ruby-lorcon/
+
+Once those dependencies are met, everything should work fine.
+
+TODO: Add blurb about installing linalg since it depends on something I cannot
+current get working on my machine.
+
+== Depedencies ==
+
+  C-libraries
+  - lorcon
+  - libpcap
+  
+  Ruby libraries
+  - linalg
