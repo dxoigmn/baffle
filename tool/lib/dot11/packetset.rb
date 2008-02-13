@@ -132,8 +132,10 @@ module Baffle
         
         if desired.prefix_length == 32
           "ether[#{offset}:4] = #{'%#x' % first_four}"
-        else
+        elsif desired.prefix_length == 48 || desired.prefix_length == 0
           "(ether[#{offset}:4] = #{'%#x' % first_four} && ether[#{offset + 4}:2] = #{'%#x' % second_two})"
+        else
+          raise "unsupport prefix length #{desired.prefix_length}"  
         end
       else
         raise "unknown"  

@@ -4,6 +4,9 @@ include REXML
 
 module Baffle
   def self.fingerprint_diagram(vector)
+    $width = 24
+    $height = 8
+  
     doc = Document.new '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'
     svg = doc.add_element "svg", "width" => "100%", "viewbox" => "0 0 100 100", "version" => "1.1", "xmlns" => "http://www.w3.org/2000/svg"
 
@@ -13,14 +16,14 @@ module Baffle
       
     max_count = vector.max
   
-    total_width = 64 * $width *  1.05 
+    total_width = 32 * $width *  1.05 
 
-    csv.each_with_index do |respond_count, flags_value|
+    vector.each_with_index do |respond_count, flags_value|
       alpha = (respond_count / max_count.to_f) ** 4 + 0.05
     
       width = ($width * alpha + 1) / total_width * 600.0
   
-      flags_value.to_s(2).split(//).each_with_index do |c, i|
+      ("%08d" %flags_value.to_s(2)).split(//).each_with_index do |c, i|
         y = 1 + i * ($height + 1)
         color = (c == "0") ? "black" : "red"
 
@@ -30,5 +33,6 @@ module Baffle
       x += total_width / 256
     end
 
+    svg
   end
 end

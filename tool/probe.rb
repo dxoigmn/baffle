@@ -1,7 +1,7 @@
 require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
 require File.join(File.dirname(__FILE__), 'lib/capture/capture')
 require File.join(File.dirname(__FILE__), 'util')
-#require 'linalg'
+require 'linalg'
 
 module Baffle
   module Probes
@@ -64,7 +64,7 @@ module Baffle
         sniff_thread.kill
       end
       
-      @compute_vector.call(@samples)
+      @vector = @compute_vector.call(@samples)
     end
     
     def sniff(capture_if, &block)
@@ -117,8 +117,6 @@ module Baffle
     
     # Gets called when all training samples have been loaded
     def learn
-	    return
-
       # The code below assumes at least two training values, and doing it with any fewer
       # doesn't make much sense anyway
       return if @training_data.size < 2
@@ -149,14 +147,14 @@ module Baffle
     def hypothesize(vector)
       similarities = Hash.new{|hash, key| hash[key] = []}
       
-      vector_embedded = vector * @u2 * @eig2.inv
+      vector_embedded = Linalg::DMatrix[vector] * @u2 * @eig2.inv
       
       @v2.rows.each_with_index do |row, i|
         similarities[@names[i]] << vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)
       end
       
       # TODO: un-hardcode the constant rejection distance
-      similarities.reject{|k, sim| sim < 0.9}.sort_by{|x| x[1]}
+      p similarities.reject{|k, sim| sim[0] < 0.9}.sort_by{|x| x[1]}
       
     end
   end

@@ -50,8 +50,8 @@ module Baffle
 
         opts.separator("")
         opts.separator("Output options:")
-        opts.on("-f SVGFILE", "--fpdiagram SVGFILE", "Write a fingerprint diagram to SVGFILE") { |svgfile| options.fpdiagram = svgfile }
-        opts.on("-p SVGPREFIX", "--plot SVGPREFIX", "Write a plot file for each probe used, using SVGPREFIX") { |svgfile| options.plot_prefix = svgfile }
+        opts.on("-f SVGPREFIX", "--fpdiagram SVGPREFIX", "Write a fingerprint diagram for each probe used, using SVGPREFIX") { |svgprefix| options.fpdiagram = svgprefix }
+        opts.on("-p SVGPREFIX", "--plot SVGPREFIX", "Write a plot file for each probe used, using SVGPREFIX") { |svgprefix| options.plot_prefix = svgprefix }
         
         opts.separator("")
         opts.separator("Training options:")
