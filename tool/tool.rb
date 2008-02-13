@@ -8,8 +8,9 @@ module Baffle
 
   def self.run(args)
     @options = Baffle::Options.parse(ARGV)
+
     Baffle::Probes.each do |probe|
-      vector = probe.run
+      vector = probe.run(@options)
       
       if @options.fpdiagram
         File.open(@options.fpdiagram + probe.name + '.svg', 'w+') do |out|

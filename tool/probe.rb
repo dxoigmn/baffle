@@ -2,6 +2,7 @@ require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
 require File.join(File.dirname(__FILE__), 'lib/capture/capture')
 require File.join(File.dirname(__FILE__), 'util')
 require 'linalg'
+require 'thread'
 
 module Baffle
   module Probes
@@ -34,7 +35,6 @@ module Baffle
     attr_reader :name, :training_data, :injection_data, :capture_filters
 
     def initialize(name, &block)
-      @options          = Baffle.instance_variable_get("@options") # Fugly, FIXME
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
       @names            = []
@@ -48,36 +48,39 @@ module Baffle
       learn
     end
     
-    def run
+    def run(options)
       @samples = []
+      
       @repeat.times do |i|
         @samples[i] = Hash.new(0)
-        sniff_thread = sniff(@options.capture) do |packet|
-          @capture_filters.each do |filter|
-            if filter[0] =~ packet.data
-              @samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
+        
+        @emitter  = ConditionVariable.new
+        @sniffer  = Mutex.new
+        
+        sniff_thread = Thread.new do
+          # We want to only listen for packets that match the filters we've defined
+          filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
+          
+          Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
+            @emitter.signal
+
+            @capture_filters.each do |filter|
+              if filter[0] =~ packet.data
+                @samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
+              end
             end
           end
+          
+          @emitter.signal
         end
-        
-        Baffle::emit(@options.inject, @options.driver, @options.channel, @injection_data, @options.fast? ? 0.1 : 0.5)
+
+        @emitter.wait(@sniffer)
+
+        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.1 : 0.5)
         sniff_thread.kill
       end
       
       @vector = @compute_vector.call(@samples)
-    end
-    
-    def sniff(capture_if, &block)
-      thread = Thread.new do
-        # We want to only listen for packets that match the filters we've defined
-        filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
-        
-        Baffle::sniff(:device => capture_if, :filter => filter, &block)
-      end
-      
-      # Replace with a condition variable or something to be less wasteful of time
-      sleep 0.5
-      thread
     end
 
     def inject(packets)

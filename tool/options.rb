@@ -1,6 +1,14 @@
 require 'optparse'
 
 module Baffle
+  def self.options
+    @options
+  end
+ 
+  def self.options=(value)
+    @options = value
+  end
+
   class Options
     attr_accessor :inject
     attr_accessor :capture
@@ -79,7 +87,7 @@ module Baffle
         exit
       end
     
-      options
+      Baffle.options = options
     end
   end
 end
