@@ -569,6 +569,7 @@ static VALUE filter_source(VALUE self) {
     return rb_str_new2(filter->expr);
 }
 
+/*
 static VALUE filter_or(VALUE self, VALUE other) {
     struct filter_object *filter, *filter2;
     char *expr;
@@ -604,7 +605,7 @@ static VALUE filter_not(VALUE self) {
     sprintf(expr, "not ( %s )", filter->expr);
     return new_filter(expr, filter->capture, filter->optimize, filter->netmask);
 }
-
+*/
 
 void Init_capture() {
   cCapture = rb_define_class("Capture", rb_cObject);
@@ -630,9 +631,9 @@ void Init_capture() {
   rb_define_method(cFilter, "expression", filter_source, 0);
   //rb_define_method(cFilter, "expression=", filter_setexpression, 1);
   //rb_define_method(cFilter, "optimize!", filter_optimize, 0);
-  rb_define_method(cFilter, "|", filter_or, 1);
-  rb_define_method(cFilter, "&", filter_and, 1);
-  rb_define_method(cFilter, "~@", filter_not, 0);
+  //rb_define_method(cFilter, "|", filter_or, 1);
+  //rb_define_method(cFilter, "&", filter_and, 1);
+  //rb_define_method(cFilter, "~@", filter_not, 0);
   rb_define_method(cFilter, "=~", filter_match, 1);
   rb_define_method(cFilter, "===", filter_match, 1);
 
