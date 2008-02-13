@@ -1,7 +1,7 @@
 require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
 require File.join(File.dirname(__FILE__), 'lib/capture/capture')
 require File.join(File.dirname(__FILE__), 'util')
-require 'linalg'
+#require 'linalg'
 
 module Baffle
   module Probes
@@ -16,7 +16,6 @@ module Baffle
       
       Dir[File.join(File.dirname(__FILE__), "probes", "*.rb")].each do |file|
         Kernel.load file
-        #eval(File.read(file))
       end
       
       @probes
@@ -35,6 +34,7 @@ module Baffle
     attr_reader :name, :training_data, :injection_data, :capture_filters
 
     def initialize(name, &block)
+      @options          = Baffle.instance_variable_get("@options") # Fugly, FIXME
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
       @names            = []
@@ -47,16 +47,16 @@ module Baffle
       learn
     end
     
-    def run(inject_if, capture_if)
-      sniff_thread = sniff(capture_if) do |packet|
+    def run
+      sniff_thread = sniff(@options.capture) do |packet|
         @capture_filters.each do |filter|
-          if filter[0] =~ packet
+          if filter[0] =~ packet.data
             filter[1].call(packet)
           end
         end
       end
       
-      Baffle::emit(@injection_data)
+      Baffle::emit(@options.inject, @options.driver, @options.channel, @injection_data, @options.fast? ? 0.1 : 0.5)
       
       sniff_thread.kill
     end
@@ -64,9 +64,9 @@ module Baffle
     def sniff(capture_if, &block)
       Thread.new do
         # We want to only listen for packets that match the filters we've defined
-        filter = @capture_filters.map{|filter| "(#{filter[0]})"}.join(" || ")
-      
-        Baffle::sniff(:interface => capture_if, :filter => filter, &block)
+        filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
+        p filter
+        Baffle::sniff(:device => capture_if, :filter => filter, &block)
       end
     end
 
@@ -99,6 +99,8 @@ module Baffle
     
     # Gets called when all training samples have been loaded
     def learn
+	    return
+
       # The code below assumes at least two training values, and doing it with any fewer
       # doesn't make much sense anyway
       return if @training_data.size < 2

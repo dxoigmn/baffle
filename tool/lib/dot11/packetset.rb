@@ -3,6 +3,7 @@ module Baffle
     Pair = Struct.new(:name, :value)
   
     attr_accessor :packet_class
+    attr_reader   :fields
   
     def initialize(klass, parameters)
       @fields = []
@@ -58,6 +59,12 @@ module Baffle
         yield self[i]
       end
     end
+    
+    def each_with_index
+      size.times do |i|
+        yield self[i], i
+      end
+    end
 
     def include?(packet)
       # This is horrrrrribly inefficient. FIXME
@@ -73,15 +80,17 @@ module Baffle
       mask = ((2 << (bitrange.end - bitrange.begin)) - 1) << bitrange.begin
       
       value = "(ether[#{offset}:#{size}] & #{'%#x' % mask}) >> #{bitrange.begin}"
-            
+      
       case desired
       when Range
         "(#{value} >= #{'%#x' % desired.begin} && #{value} #{desired.exclude_end? ? "<" : "<="} #{'%#x' % desired.end})"
       when Array
         # TODO: deal with arrays of ranges
         '(' + desired.map {|d| "#{value} = #{'%#x' % d}"}.join(" || ") + ')'
-      when Numeric
-        "#{value} #{negated ? '!' : ''}= #{'%#x' % desired}"
+      when Numeric, String
+        "#{value} #{negated ? '!' : ''}= #{'%#x' % desired.to_i}"
+      else
+        raise "unknown"
       end
     end
     
@@ -96,6 +105,8 @@ module Baffle
         desired.map {|d| "#{value} #{negated ? '!' : ''}= #{'%#x' % d}"}.join(" || ")
       when Numeric
         "#{value} #{negated ? '!' : ''}= #{'%#x' % desired}"
+      else
+        raise "unknown"  
       end      
     end
     
@@ -118,7 +129,9 @@ module Baffle
         first_four = desired[0, 4].pack("CCCC").unpack("N")[0]
         second_two = desired[4, 2].pack("CC").unpack("n")[0]
         
-        "(ether[#{offset}:2] = #{'%#x' % first_four} && ether[#{offset + 4}:2] = #{'%#x' % second_two})"
+        "(ether[#{offset}:4] = #{'%#x' % first_four} && ether[#{offset + 4}:2] = #{'%#x' % second_two})"
+      else
+        raise "unknown"  
       end
     end
     
@@ -142,6 +155,8 @@ module Baffle
             end
           when :mac
             mac_to_filter(field_info[:offset], field_info[:size], value, negated)
+          else
+            raise "unknown"  
           end
         end.join(" && ")
       end
@@ -154,12 +169,16 @@ module Baffle
         '(' + begin
           field_info = fields.find{|x| field.name == x[0]}
           
-          next if field_info.nil?
+          if field_info.nil?
+            raise "nil field_info"
+          end
           
           field_info = field_info[1]
           
           # We don't really want to do this
-          next if field_info.nil?
+          if field_info.nil?
+            raise "nil field_info 2"
+          end
                 
           if field_info.has_key?(:condition)
             if !field_info[:offset].kind_of?(Numeric)
@@ -180,6 +199,8 @@ module Baffle
                         end
                       when :mac
                         mac_to_filter(value, field_info[:size], field.value)
+                      else
+                        raise "unknown"  
                       end
                     end
                   end
@@ -195,6 +216,8 @@ module Baffle
                 end
               when :mac
                 mac_to_filter(field_info[:offset], field_info[:size], field.value)
+              else
+                raise "unknown"  
               end + '))'
             end
           else
@@ -211,6 +234,8 @@ module Baffle
                 end
               when :mac
                 mac_to_filter(field_info[:offset], field_info[:size], field.value)
+              else
+                raise "unknown"  
               end
             end
           end

@@ -11,16 +11,19 @@ module Baffle
     attr_accessor :fpdiagram
     attr_accessor :plot_prefix
     attr_accessor :bssid, :essid
+    attr_accessor :fast
 
     def initialize
       @inject   = 'ath0'
       @capture  = 'ath0'
       @driver   = 'madwifing'
       @channel  = 11
+      @fast     = false
       @train    = false
       @verbose  = false
     end
     
+    def fast?; self.fast; end
     def train?; self.train; end
     def verbose?; self.verbose; end
     def interface=(value); self.inject = value; self.capture = value; end
@@ -37,11 +40,13 @@ module Baffle
 
         opts.separator("")
         opts.separator("Fingerprinting options:")
+        opts.on("-e ESSID", "--essid ESSID", "The ESSID to send probes and other ESSID-aware to") { |essid| options.essid = essid }
         opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options.interface = interface }
         opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options.inject = interface }
         opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options.capture = interface }
         opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options.driver = driver }
         opts.on("-c CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options.channel = channel }
+        opts.on("-s", "--speed", "Turn down the delay between emits, to scan more quickly") { options.fast = true }
 
         opts.separator("")
         opts.separator("Output options:")
