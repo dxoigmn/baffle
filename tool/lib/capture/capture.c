@@ -540,6 +540,14 @@ static VALUE filter_new(int argc, VALUE *argv, VALUE class) {
   return self;
 }
 
+static VALUE filter_source(VALUE self) {
+    struct filter_object *filter;
+
+    GetFilter(self, filter);
+    return rb_str_new2(filter->expr);
+}
+
+
 VALUE filter_match(VALUE self, VALUE v_pkt) {
   struct filter_object *filter;
   struct packet_object *pkt;
@@ -619,7 +627,7 @@ void Init_capture() {
   rb_define_method(cCapture, "stats", capture_stats, 0);
 
   rb_define_singleton_method(cFilter, "new", filter_new, -1);
-  //rb_define_method(cFilter, "expression", filter_getexpression, 0);
+  rb_define_method(cFilter, "expression", filter_source, 0);
   //rb_define_method(cFilter, "expression=", filter_setexpression, 1);
   //rb_define_method(cFilter, "optimize!", filter_optimize, 0);
   rb_define_method(cFilter, "|", filter_or, 1);
