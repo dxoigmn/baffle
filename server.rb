@@ -37,17 +37,15 @@ class MainController < Ramaze::Controller
     <script src="jquery.js"></script>
     <script type="text/javascript">
       function loadImage() {
-        var img = new Image();
-
-        $(img).load(function () {
-          //$('#loader').removeClass('loading');
-          alert("I'm loading");
-          clearInterval(int);
+        $.get('#{image}', function(data) {
+          $('#loader').removeClass('loading');
+          clearInterval(loader);
           //$("#loader").append('<iframe src="#{image}" width="100" height="100" border="0">');
-        }).error(function () {}).attr('src', '#{image}');
+          $("#loader").append('<embed src="#{image}" width="500px" height="500px" border="0"');
+        });
       }
 
-      var int = setInterval("loadImage()", 1000);
+      var loader = setInterval("loadImage()", 3000);
     </script>
   </head>
   <body>
