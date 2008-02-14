@@ -76,7 +76,7 @@ module Baffle
 
         @emitter.wait(@sniffer)
 
-        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.1 : 0.5)
+        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
         sniff_thread.kill
       end
       
@@ -157,7 +157,7 @@ module Baffle
       end
       
       # TODO: un-hardcode the constant rejection distance
-      p similarities.reject{|k, sim| sim[0] < 0.9}.sort_by{|x| x[1]}
+      similarities.reject{|k, sim| sim[0] < 0.9}.sort_by{|x| x[1]}
       
     end
   end

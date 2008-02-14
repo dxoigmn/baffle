@@ -53,7 +53,7 @@ module Baffle
         opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options.inject = interface }
         opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options.capture = interface }
         opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options.driver = driver }
-        opts.on("-c CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options.channel = channel }
+        opts.on("-h CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options.channel = channel.to_i }
         opts.on("-s", "--speed", "Turn down the delay between emits, to scan more quickly") { options.fast = true }
 
         opts.separator("")

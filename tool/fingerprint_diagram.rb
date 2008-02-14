@@ -5,7 +5,7 @@ include REXML
 module Baffle
   def self.fingerprint_diagram(vector)
     $width = 24
-    $height = 8
+    $height = 24
   
     doc = Document.new '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">'
     svg = doc.add_element "svg", "width" => "100%", "viewbox" => "0 0 100 100", "version" => "1.1", "xmlns" => "http://www.w3.org/2000/svg"
@@ -19,7 +19,7 @@ module Baffle
     total_width = 32 * $width *  1.05 
 
     vector.each_with_index do |respond_count, flags_value|
-      alpha = (respond_count / max_count.to_f) ** 4 + 0.05
+      alpha = (respond_count / max_count.to_f) ** 3 + 0.1
     
       width = ($width * alpha + 1) / total_width * 600.0
   
@@ -35,4 +35,10 @@ module Baffle
 
     svg
   end
+end
+
+vector = [3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+d = Baffle.fingerprint_diagram(vector)
+File.open('test2.svg', 'w+') do |f|
+f.write(d.to_s(1))
 end

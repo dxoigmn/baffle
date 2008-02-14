@@ -18,7 +18,8 @@ module Baffle
         end 
       end
       
-      probe.hypothesize(vector)
+      puts "#{probe.name} hypothesizes #{probe.hypothesize(vector).inspect}"
+      puts "from vector: #{vector.inspect}"
     end
   end
 end
