@@ -41,6 +41,7 @@ class MainController < Ramaze::Controller
         $(img).load(function () {
           $('#loader').removeClass('loading');
           clearInterval(int);
+          $("#embedded").attr('src', '#{image}');
         }).attr('src', '#{image}');
       }
 
@@ -51,7 +52,7 @@ class MainController < Ramaze::Controller
     <center>
     <h1>#{image.gsub('_', ':')}</h1>
     <div class="loading" id="loader">
-    <embed src="#{image}"></embed>
+    <embed src="#{image}" id="embedded"></embed>
     </div>
     </center>
   </body>
