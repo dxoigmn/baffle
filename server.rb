@@ -8,11 +8,12 @@ class MainController < Ramaze::Controller
     target  = request[:target]
     essid   = request[:essid]
 
-    Thread.new do
-      Baffle.run(["-e", essid, target, "-f", target.gsub(/:/, '_')])
-    end
+    
+    Process.detach Kernel.fork{system("cd tool && ./tool.rb -e #{essid} #{target} -f ../public/#{target.gsub(/:/, '_')}_")}
+    #Baffle.run(["-e", essid, target, "-f", target.gsub(/:/, '_')])
 
-    redirect "/image?i=#{target.gsub(/:/, '_')}_auth_flags.jpg"
+
+    redirect "/image?i=#{target.gsub(/:/, '_')}_auth_flags.svg"
   end
   
   def image
@@ -39,10 +40,11 @@ class MainController < Ramaze::Controller
         var img = new Image();
 
         $(img).load(function () {
-          $('#loader').removeClass('loading');
+          //$('#loader').removeClass('loading');
+          alert("I'm loading");
           clearInterval(int);
-          $("#loader").append('<iframe src="#{image}" width="100" height="100" border="0"'>)
-        }).attr('src', '#{image}');
+          //$("#loader").append('<iframe src="#{image}" width="100" height="100" border="0">');
+        }).error(function () {}).attr('src', '#{image}');
       }
 
       var int = setInterval("loadImage()", 1000);
