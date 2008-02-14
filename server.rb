@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'ramaze'
-require File.join(File.dirname(__FILE__), 'tool', 'tool')
+#require File.join(File.dirname(__FILE__), 'tool', 'tool')
 
 class MainController < Ramaze::Controller
   def fingerprint
@@ -38,32 +38,10 @@ class MainController < Ramaze::Controller
       function loadImage() {
         var img = new Image();
 
-        // wrap our new image in jQuery, then:
-        $(img)
-        // once the image has loaded, execute this code
-        .load(function () {
-          // set the image hidden by default    
-          $(this).hide();
-
-          // with the holding div #loader, apply:
-          $('#loader')
-            // remove the loading class (so no background spinner), 
-            .removeClass('loading')
-            // then insert our image
-            .append(this);
-
-          // fade our image in to create a nice effect
-          $(this).fadeIn();
+        $(img).load(function () {
+          $('#loader').removeClass('loading');
           clearInterval(int);
-        })
-
-        // if there was an error loading the image, react accordingly
-        .error(function () {
-          // notify the user that the image could not be loaded
-        })
-
-        // *finally*, set the src attribute of the new image to our image
-        .attr('src', '#{image}');
+        }).attr('src', '#{image}');
       }
 
       var int = setInterval("loadImage()", 1000);
@@ -72,7 +50,9 @@ class MainController < Ramaze::Controller
   <body>
     <center>
     <h1>#{image.gsub('_', ':')}</h1>
-    <div class="loading" id="loader"></div>
+    <div class="loading" id="loader">
+    <embed src="#{image}"></embed>
+    </div>
     </center>
   </body>
 </html>
