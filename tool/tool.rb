@@ -9,7 +9,7 @@ module Baffle
     p "running baffle!"
     @options = Baffle::Options.parse(args)
     p "parsed arguments"
-    begin
+
     Baffle::Probes.each do |probe|
       vector = probe.run(@options)
       puts "running probe #{probe.name}"
@@ -21,9 +21,6 @@ module Baffle
       
       puts "#{probe.name} hypothesizes #{probe.hypothesize(vector).inspect}"
       puts "from vector: #{vector.inspect}"
-    end
-    rescue
-      p "something fucked up: #{$!}"
     end
     p "done!!!"
   end

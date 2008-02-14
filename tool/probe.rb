@@ -16,7 +16,7 @@ module Baffle
       @probes = []
       
       Dir[File.join(File.dirname(__FILE__), "probes", "*.rb")].each do |file|
-        Kernel.load file
+        require file
       end
       
       @probes
@@ -60,7 +60,7 @@ module Baffle
         sniff_thread = Thread.new do
           # We want to only listen for packets that match the filters we've defined
           filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
-          
+
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
             @emitter.signal
 
@@ -141,9 +141,9 @@ module Baffle
       vt = vt.transpose
       
       # Do we want more than 2 dimensions? TODO: test other numbers of dimensions
-      @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1)]
-      @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1)]
-      @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
+      @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1), u.column(2)]
+      @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1), vt.column(2)]
+      @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,3], s.column(1).to_a.flatten[0,3], s.column(2).to_a.flatten[0, 3]]
     end
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
