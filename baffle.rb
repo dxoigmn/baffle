@@ -4,6 +4,29 @@ require 'ramaze'
 #require File.join(File.dirname(__FILE__), 'tool', 'tool')
 
 class MainController < Ramaze::Controller
+  def index
+    html =<<END
+<html>
+  <head>
+    <title>baffle</title>
+  </head>
+  <body>
+    <h1>baffle</h1>
+    
+    <form action="fingerprint" method="get">
+      <label for="target">target:</target>
+      <input type="text" name="target" /><br />
+      <label for="essid">essid:</target>
+      <input type="text" name="essid" /><br />
+      <input type="submit" value="fingerprint" />
+    </form>
+  </body>
+</html>
+END
+
+    html
+  end
+  
   def fingerprint
     target  = request[:target]
     essid   = request[:essid]
