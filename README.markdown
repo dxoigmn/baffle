@@ -12,8 +12,8 @@ need help from a few C-libraries (see Depedencies). Before running Baffle,
 you must compile the Ruby extensions wrapping these libraries. Generally, it
 it done in the following manner:
 
->  $ ruby extconf
->  $ make
+  $ ruby extconf
+  $ make
   
 You will need to run these commands in the following directories:
   
@@ -25,9 +25,9 @@ fortran to C bridge. These can typically be installed from package management
 systems or compiled from source.
 The ruby linalg library itself is compiled with the following commands:
 
->  $ ruby install.rb configure
->  $ ruby install.rb make
->  $ sudo ruby install.rb install
+  $ ruby install.rb configure
+  $ ruby install.rb make
+  $ sudo ruby install.rb install
 
 Once those dependencies are met, everything should work fine.
 
