@@ -44,3 +44,9 @@ Depedencies
   + Ruby libraries
     - linalg (depends on the LAPACK fortran library and f2c library)
 
+License
+-------
+
+Copyright (c) 2007-2008, The Trustees of Dartmouth College.
+
+Baffle is released as open source under a BSD license. See LICENSE for details.
