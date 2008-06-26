@@ -122,7 +122,7 @@ module Baffle
     def learn
       # The code below assumes at least two training values, and doing it with any fewer
       # doesn't make much sense anyway
-      return if @training_data.size < 2
+      fail "Need at least 2 training samples." if @training_data.size < 2
       
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
       # (there are no guarantees that two iterations over the pairs in a hash will have the same order)
@@ -148,17 +148,18 @@ module Baffle
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
     def hypothesize(vector)
+      return if vector.inject(0) { |sum, val| sum += val } == 0
+
       similarities = Hash.new{|hash, key| hash[key] = []}
       
       vector_embedded = Linalg::DMatrix[vector] * @u2 * @eig2.inv
-      
+
       @v2.rows.each_with_index do |row, i|
         similarities[@names[i]] << vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)
       end
       
       # TODO: un-hardcode the constant rejection distance
       similarities.reject{|k, sim| sim[0] < 0.9}.sort_by{|x| x[1]}
-      
     end
   end
 end
