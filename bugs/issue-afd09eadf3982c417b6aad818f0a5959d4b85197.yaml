@@ -1,0 +1,18 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: AuthReq Training Data
+desc: Add some AuthReq training data.
+type: :task
+component: Baffle
+release: Blackhat
+reporter: Cory Cornelius <dxoigmn@gmail.com>
+status: :unstarted
+disposition: 
+creation_time: 2008-06-28 23:09:18.070049 Z
+references: []
+
+id: afd09eadf3982c417b6aad818f0a5959d4b85197
+log_events: 
+- - 2008-06-28 23:09:19.188364 Z
+  - Cory Cornelius <dxoigmn@gmail.com>
+  - created
+  - ""

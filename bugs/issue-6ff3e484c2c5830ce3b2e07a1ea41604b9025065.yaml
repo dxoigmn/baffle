@@ -1,0 +1,18 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Training Database
+desc: Move "train" data structures into a separate db file with a distinct name.
+type: :feature
+component: Baffle
+release: Blackhat
+reporter: Cory Cornelius <dxoigmn@gmail.com>
+status: :unstarted
+disposition: 
+creation_time: 2008-06-28 23:08:35.430309 Z
+references: []
+
+id: 6ff3e484c2c5830ce3b2e07a1ea41604b9025065
+log_events: 
+- - 2008-06-28 23:08:46.246946 Z
+  - Cory Cornelius <dxoigmn@gmail.com>
+  - created
+  - Use YAML?

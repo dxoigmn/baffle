@@ -1,0 +1,16 @@
+--- !ditz.rubyforge.org,2008-03-06/project 
+name: Baffle
+version: "0.3"
+components: 
+- !ditz.rubyforge.org,2008-03-06/component 
+  name: Baffle
+releases: 
+- !ditz.rubyforge.org,2008-03-06/release 
+  name: Blackhat
+  status: :unreleased
+  release_time: 
+  log_events: 
+  - - 2008-06-28 23:07:13.864479 Z
+    - Cory Cornelius <dxoigmn@gmail.com>
+    - created
+    - ""
