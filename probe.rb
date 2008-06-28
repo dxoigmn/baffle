@@ -3,6 +3,7 @@ require File.join(File.dirname(__FILE__), 'lib/capture/capture')
 require File.join(File.dirname(__FILE__), 'util')
 require 'linalg'
 require 'thread'
+require 'yaml'
 
 module Baffle
   module Probes
@@ -19,11 +20,21 @@ module Baffle
         require file
       end
       
+      probe_data = YAML::load(File.open(File.join(File.dirname(__FILE__), 'probe_data.yml')))
+      
+      @probes.each do |probe|
+        next unless probe_data[probe.name]
+        
+        probe_data[probe.name].each |data|
+          probe.training_data << data
+        end
+      end
+      
       @probes
     end
     
     def self.each
-      load unless @loaded
+      load
       
       @probes.each do |probe|
         yield probe
@@ -112,10 +123,6 @@ module Baffle
     
     def timeout(&block)
       @capture_filters << [:timeout, block]
-    end
-
-    def train(name, vector)
-      @training_data[name] << vector
     end
     
     # Gets called when all training samples have been loaded
