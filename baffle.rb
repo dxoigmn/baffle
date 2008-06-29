@@ -17,7 +17,7 @@ module Baffle
         end 
       end
 
-      if @options.train
+      if @options.train?
         puts "got vector: #{vector.inspect}"
       else
         puts "#{probe.name} hypothesizes #{probe.hypothesize(vector).inspect}"

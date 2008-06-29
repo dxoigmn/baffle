@@ -30,8 +30,6 @@ module Baffle
             probe.training_data[name] << vector
           end
         end
-
-        probe.learn
       end
       
       @probes
@@ -61,6 +59,8 @@ module Baffle
     end
     
     def run(options)
+      learn unless options.train?
+
       @samples = []
       
       @repeat.times do |i|
