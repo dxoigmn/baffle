@@ -1,0 +1,4 @@
+lib/*/*.o
+lib/*/*.log
+lib/*/*.so
+lib/*/Makefile
