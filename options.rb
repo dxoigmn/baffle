@@ -22,8 +22,8 @@ module Baffle
     attr_accessor :fast
 
     def initialize
-      @inject   = 'ath1'
-      @capture  = 'ath1'
+      @inject   = 'ath0'
+      @capture  = 'ath0'
       @driver   = 'madwifing'
       @channel  = 11
       @fast     = true
