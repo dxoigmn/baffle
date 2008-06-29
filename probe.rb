@@ -24,17 +24,21 @@ module Baffle
       
       @probes.each do |probe|
         next unless probe_data[probe.name]
-        
-        probe_data[probe.name].each do |data|
-          probe.training_data << data
+       
+        probe_data[probe.name].each do |name, vectors|
+          vectors.each do |vector|
+            probe.training_data[name] << vector
+          end
         end
+
+        probe.learn
       end
       
       @probes
     end
     
     def self.each
-      load
+      self.load
       
       @probes.each do |probe|
         yield probe
@@ -54,9 +58,6 @@ module Baffle
       @repeat           = 1
 
       instance_eval(&block)
-      
-      # I think this is a good place to call learn... we should have all training samples by now
-      learn
     end
     
     def run(options)
