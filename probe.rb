@@ -25,7 +25,7 @@ module Baffle
       @probes.each do |probe|
         next unless probe_data[probe.name]
         
-        probe_data[probe.name].each |data|
+        probe_data[probe.name].each do |data|
           probe.training_data << data
         end
       end
