@@ -5,8 +5,8 @@ type: :task
 component: Baffle
 release: Blackhat
 reporter: Cory Cornelius <dxoigmn@gmail.com>
-status: :unstarted
-disposition: 
+status: :closed
+disposition: :fixed
 creation_time: 2008-06-28 23:09:18.070049 Z
 references: []
 
@@ -15,4 +15,8 @@ log_events:
 - - 2008-06-28 23:09:19.188364 Z
   - Cory Cornelius <dxoigmn@gmail.com>
   - created
+  - ""
+- - 2008-06-30 20:17:01.430773 Z
+  - Cory Cornelius <dxoigmn@gmail.com>
+  - closed issue with disposition fixed
   - ""

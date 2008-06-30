@@ -7,10 +7,23 @@ components:
 releases: 
 - !ditz.rubyforge.org,2008-03-06/release 
   name: Blackhat
+  status: :released
+  release_time: 2008-06-30 20:18:45.897174 Z
+  log_events: 
+  - - 2008-06-28 23:07:13.864479 Z
+    - Cory Cornelius <dxoigmn@gmail.com>
+    - created
+    - ""
+  - - 2008-06-30 20:18:45.897187 Z
+    - Cory Cornelius <dxoigmn@gmail.com>
+    - released
+    - ""
+- !ditz.rubyforge.org,2008-03-06/release 
+  name: post-blackhat
   status: :unreleased
   release_time: 
   log_events: 
-  - - 2008-06-28 23:07:13.864479 Z
+  - - 2008-06-30 20:18:28.173217 Z
     - Cory Cornelius <dxoigmn@gmail.com>
     - created
     - ""
