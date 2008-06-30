@@ -1,0 +1,18 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Default values for Dot11 packets
+desc: Each Dot11* class should specify defaults or fail gracefully if not enough data is received to dissect the packet.
+type: :bugfix
+component: Baffle
+release: Blackhat
+reporter: Cory Cornelius <dxoigmn@gmail.com>
+status: :unstarted
+disposition: 
+creation_time: 2008-06-30 05:45:36.593753 Z
+references: []
+
+id: f1da140d8191fdc08c9a5d65b4eda30cdece035c
+log_events: 
+- - 2008-06-30 05:45:38.290204 Z
+  - Cory Cornelius <dxoigmn@gmail.com>
+  - created
+  - ""
