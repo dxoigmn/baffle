@@ -59,7 +59,9 @@ module Baffle
     end
     
     def run(options)
-      learn unless options.train?
+      unless options.train?
+        return nil unless learn
+      end
 
       @samples = []
       
@@ -130,7 +132,7 @@ module Baffle
     def learn
       # The code below assumes at least two training values, and doing it with any fewer
       # doesn't make much sense anyway
-      fail "Need at least 2 training samples." if @training_data.size < 2
+      return false if @training_data.size < 2
       
       # Doing it this way to make sure we have the same row/column order in names as we do in our matrix.
       # (there are no guarantees that two iterations over the pairs in a hash will have the same order)
@@ -152,6 +154,8 @@ module Baffle
       @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1), u.column(2)]
       @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1), vt.column(2)]
       @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,3], s.column(1).to_a.flatten[0,3], s.column(2).to_a.flatten[0, 3]]
+
+      true
     end
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis

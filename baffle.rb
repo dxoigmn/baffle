@@ -9,8 +9,14 @@ module Baffle
     @options = Baffle::Options.parse(args)
 
     Baffle::Probes.each do |probe|
-      puts "running probe #{probe.name}"
+      puts "Running probe #{probe.name}"
       vector = probe.run(@options)
+     
+      unless vector
+        warn "Probe was skipped."
+        next
+      end
+
       if @options.fpdiagram
         File.open(@options.fpdiagram + probe.name + '.svg', 'w+') do |out|
           out.write Baffle.fingerprint_diagram(vector).to_s
