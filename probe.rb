@@ -151,9 +151,9 @@ module Baffle
       vt = vt.transpose
       
       # Do we want more than 2 dimensions? TODO: test other numbers of dimensions
-      @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1), u.column(2)]
-      @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1), vt.column(2)]
-      @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,3], s.column(1).to_a.flatten[0,3], s.column(2).to_a.flatten[0, 3]]
+      @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1)]
+      @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1)]
+      @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
 
       true
     end

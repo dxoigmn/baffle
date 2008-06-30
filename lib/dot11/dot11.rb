@@ -902,9 +902,9 @@ module Baffle
       def dissect(data)
         fields = data.unpack("vvv")
 
-        @algo = fields[0]
-        @seqnum = fields[1]
-        @status = fields[2]
+        @algo = fields[0] || 0
+        @seqnum = fields[1] || 0
+        @status = fields[2] || 0
 
         @rest = data[6..-1]
       end
