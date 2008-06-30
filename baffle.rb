@@ -23,11 +23,10 @@ module Baffle
         end 
       end
 
-      if @options.train?
-        puts "got vector: #{vector.inspect}"
-      else
-        puts "#{probe.name} hypothesizes #{probe.hypothesize(vector).inspect}"
-        puts "from vector: #{vector.inspect}"
+      puts "Vector: #{vector.inspect}"
+
+      unless @options.train?
+        puts "#{probe.name} hypothesizes: #{probe.hypothesize(vector)}"
       end
     end
   end

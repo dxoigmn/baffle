@@ -160,18 +160,17 @@ module Baffle
 
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
     def hypothesize(vector)
-      return if vector.inject(0) { |sum, val| sum += val } == 0
-
-      similarities = Hash.new{|hash, key| hash[key] = []}
+      similarities = []
       
       vector_embedded = Linalg::DMatrix[vector] * @u2 * @eig2.inv
 
       @v2.rows.each_with_index do |row, i|
-        similarities[@names[i]] << vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)
+        similarities << [@names[i], vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)]
       end
-      
-      # TODO: un-hardcode the constant rejection distance
-      similarities.reject{|k, sim| sim[0] < 0.9}.sort_by{|x| x[1]}
+    
+      name, score = similarities.sort_by { |name, score| -score }.first
+
+      "#{name} (#{score})"
     end
   end
 end
