@@ -195,7 +195,7 @@ scan_ap = proc { |mac, essid|
   #  end
   #end
   
-  args ['--fpdiagram', "/tmp/#{mac}_", mac] 
+  args = ['--fpdiagram', "/tmp/#{mac}_", mac] 
   hypotheses = Baffle.run(args)
   thr_stop = true
   bar.fraction= 0
