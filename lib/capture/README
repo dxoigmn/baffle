@@ -1,6 +1,0 @@
-To compile:
-
-  ruby extconf.rb
-  make
-
-To make sure that it works, run test.rb (with appropriate privileges) passing the interface to listen on as an argument and it should output some data once there is activity.

@@ -1,5 +1,6 @@
-require File.join(File.dirname(__FILE__), 'lib/capture/capture')
-require 'Lorcon'
+require 'rubygems'
+require 'rb-pcap'
+require 'rb-locron'
 
 module Baffle
   def self.emit(interface, driver, channel, stuff, sleep_interval = 0.5)

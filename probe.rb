@@ -1,9 +1,12 @@
-require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
-require File.join(File.dirname(__FILE__), 'lib/capture/capture')
-require File.join(File.dirname(__FILE__), 'util')
+require 'rubygems'
+require 'dot11'
 require 'linalg'
 require 'thread'
 require 'yaml'
+
+require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
+require File.join(File.dirname(__FILE__), 'lib/capture/capture')
+require File.join(File.dirname(__FILE__), 'util')
 
 module Baffle
   module Probes

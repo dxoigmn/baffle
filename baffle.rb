@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
+require 'rubygems'
+require 'dot11'
+
 require File.join(File.dirname(__FILE__), 'options')
 require File.join(File.dirname(__FILE__), 'probe')
 require File.join(File.dirname(__FILE__), 'fingerprint_diagram')
-require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
 
 module Baffle
   def self.run(args)
