@@ -9,7 +9,6 @@ Gem::Specification.new do |s|
                       'LICENSE',
                       'bin/baffle',
                       'lib/baffle.rb',
-                      'lib/baffle/classify.rb',
                       'lib/baffle/fingerprint_diagram.rb',
                       'lib/baffle/options.rb',
                       'lib/baffle/probe.rb',
