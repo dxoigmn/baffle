@@ -19,8 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = [ 'lib' ]
   s.executables   = ['baffle']
   
-  s.add_dependency('rb-lorcon', ['> 0.0.0'])
-  s.add_dependency('rb-pcap', ['> 0.0.0'])
-  s.add_dependency('dot11', ['> 0.0.0'])
-  s.add_dependency('linalg', ['> 0.0.0'])
+  s.add_dependency('dxoigmn-rb-lorcon', ['> 0.0.0'])
+  s.add_dependency('dxoigmn-rb-pcap', ['> 0.0.0'])
+  s.add_dependency('dxoigmn-dot11', ['> 0.0.0'])
 end

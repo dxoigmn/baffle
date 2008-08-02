@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'rb-pcap'
-require 'rb-locron'
+require 'rb-lorcon'
 
 module Baffle
   def self.emit(interface, driver, channel, stuff, sleep_interval = 0.5)
