@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'baffle'
-  s.version       = '0.0.3'
+  s.version       = '0.0.4'
   s.date          = '2008-08-02'
   s.summary       = 'A Behavioral Active Fingerprinting tool for 802.11 APs, operating entirely within the Link Layer.'
   s.homepage      = 'http://github.com/dxoigmn/baffle'
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
                       'lib/baffle/probes/probereq_flags.rb',
                       'data/probes.yml' ]
   s.require_paths = [ 'lib' ]
-  s.executables   = ['baffle']
+  s.executables   = [ 'baffle', 'gbaffle' ]
   
   s.add_dependency('dxoigmn-rb-lorcon', ['>= 0.1.0'])
   s.add_dependency('dxoigmn-rb-pcap', ['>= 0.1.0'])
