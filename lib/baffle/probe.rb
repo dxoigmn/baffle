@@ -1,12 +1,11 @@
 require 'rubygems'
 require 'dot11'
+require 'rb-pcap'
 require 'linalg'
 require 'thread'
 require 'yaml'
 
-require File.join(File.dirname(__FILE__), 'lib/dot11/dot11')
-require File.join(File.dirname(__FILE__), 'lib/capture/capture')
-require File.join(File.dirname(__FILE__), 'util')
+require File.expand_path(File.join(File.dirname(__FILE__), 'util'))
 
 module Baffle
   module Probes
@@ -20,10 +19,10 @@ module Baffle
       @probes = []
       
       Dir[File.join(File.dirname(__FILE__), "probes", "*.rb")].each do |file|
-        require file
+        require File.expand_path(file)
       end
       
-      probe_data = YAML::load(File.open(File.join(File.dirname(__FILE__), 'probe_data.yml')))
+      probe_data = YAML::load(File.open(File.join(File.dirname(__FILE__), '..', '..', 'data', 'probes.yml')))
       
       @probes.each do |probe|
         next unless probe_data[probe.name]

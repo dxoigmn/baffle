@@ -2,9 +2,9 @@
 require 'rubygems'
 require 'dot11'
 
-require File.join(File.dirname(__FILE__), 'options')
-require File.join(File.dirname(__FILE__), 'probe')
-require File.join(File.dirname(__FILE__), 'fingerprint_diagram')
+require File.expand_path(File.join(File.dirname(__FILE__), 'baffle', 'options'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'baffle', 'probe'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'baffle', 'fingerprint_diagram'))
 
 module Baffle
   def self.run(args)
@@ -38,5 +38,3 @@ module Baffle
     hypotheses
   end
 end
-
-Baffle.run(ARGV) if __FILE__ == $0
