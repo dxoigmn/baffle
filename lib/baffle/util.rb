@@ -5,7 +5,10 @@ require 'rb-lorcon'
 module Baffle
   def self.emit(interface, driver, channel, stuff, sleep_interval = 0.5)
     @device = Lorcon::Device.new(interface, driver)
-    @device.channel = channel
+    @device.fmode      = "INJMON"
+    @device.channel    = channel
+    @device.txrate     = 2
+    @device.modulation = "DSSS"
     
     case stuff
       when Dot11::PacketSet

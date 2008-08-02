@@ -70,31 +70,21 @@ module Baffle
       @repeat.times do |i|
         samples[i] = Hash.new(0)
         
-        sniffer  = Mutex.new
-        
         sniff_thread = Thread.new do
-          sniffer.lock
-
           # We want to only listen for packets that match the filters we've defined
           filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
           
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
-            sniffer.unlock
-            
             @capture_filters.each do |filter|
               if filter[0] =~ packet.data
                 samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
               end
             end
           end
-          
-          sniffer.unlock
         end
        
-        sniffer.synchronize do
-          Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
-          sniff_thread.kill
-        end
+        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
+        sniff_thread.kill
       end
       
       @vector = @compute_vector.call(samples)
