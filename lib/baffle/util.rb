@@ -4,10 +4,11 @@ require 'rb-lorcon'
 
 module Baffle
   def self.emit(interface, driver, channel, stuff, sleep_interval = 0.5)
-    @device = Lorcon::Device.new(interface, driver, 11)
+    @device = Lorcon::Device.new(interface, driver)
+    @device.channel = channel
     
     case stuff
-      when PacketSet
+      when Dot11::PacketSet
         local_mac = nil #0xbaaaad000000
         stuff.each_with_index do |packet, index|
           local_mac ||= packet.addr2.to_i
@@ -19,7 +20,7 @@ module Baffle
           send_p packet.data
           sleep sleep_interval
         end
-      when Packet
+      when Dot11::Packet
         send_p stuff
     end
   end  

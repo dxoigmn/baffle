@@ -65,38 +65,39 @@ module Baffle
         return nil unless learn
       end
 
-      @samples = []
+      samples = []
       
       @repeat.times do |i|
-        @samples[i] = Hash.new(0)
+        samples[i] = Hash.new(0)
         
-        @emitter  = ConditionVariable.new
-        @sniffer  = Mutex.new
+        sniffer  = Mutex.new
         
         sniff_thread = Thread.new do
+          sniffer.lock
+
           # We want to only listen for packets that match the filters we've defined
           filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
-
+          
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
-            @emitter.signal
-
+            sniffer.unlock
+            
             @capture_filters.each do |filter|
               if filter[0] =~ packet.data
-                @samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
+                samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
               end
             end
           end
           
-          @emitter.signal
+          sniffer.unlock
         end
-
-        @emitter.wait(@sniffer)
-
-        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
-        sniff_thread.kill
+       
+        sniffer.synchronize do
+          Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
+          sniff_thread.kill
+        end
       end
       
-      @vector = @compute_vector.call(@samples)
+      @vector = @compute_vector.call(samples)
     end
 
     def inject(packets)
@@ -109,13 +110,13 @@ module Baffle
 
     def capture(filter, &block)
       case filter
-      when Packet
-        if !filter.kind_of?(Dot11)
-          filter = PacketSet.new(Dot11, :payload => filter)
+      when Dot11::Packet
+        if !filter.kind_of?(Dot11::Dot11)
+          filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter)
         end
-      when PacketSet
-        if filter.packet_class != Dot11
-          filter = PacketSet.new(Dot11, :payload => filter)
+      when Dot11::PacketSet
+        if filter.packet_class != Dot11::Dot11
+          filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter)
         end
       end
       
