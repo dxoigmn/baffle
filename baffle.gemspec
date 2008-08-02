@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.files         = [ 'README.markdown',
                       'LICENSE',
                       'bin/baffle',
+                      'bin/gbaffle',
                       'lib/baffle.rb',
                       'lib/baffle/fingerprint_diagram.rb',
                       'lib/baffle/options.rb',
