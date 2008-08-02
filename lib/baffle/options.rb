@@ -26,7 +26,7 @@ module Baffle
       @capture  = 'ath0'
       @driver   = 'madwifing'
       @channel  = 11
-      @fast     = true
+      @fast     = false
       @train    = false
       @verbose  = false
     end
@@ -49,12 +49,12 @@ module Baffle
         opts.separator("")
         opts.separator("Fingerprinting options:")
         opts.on("-e ESSID", "--essid ESSID", "The ESSID to send probes and other ESSID-aware to") { |essid| options.essid = essid }
-        opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture") { |interface| options.interface = interface }
-        opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection") { |interface| options.inject = interface }
-        opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture") { |interface| options.capture = interface }
-        opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection") { |driver| options.driver = driver }
-        opts.on("-h CHANNEL", "--channel CHANNEL", "The channel to listen on") { |channel| options.channel = channel.to_i }
-        opts.on("-s", "--speed", "Turn down the delay between emits, to scan more quickly") { options.fast = true }
+        opts.on("-i INTERFACE", "--interface INTERFACE", "The INTERFACE to use for both injection and capture (default: ath0)") { |interface| options.interface = interface }
+        opts.on("-j INTERFACE", "--inject INTERFACE", "The INTERFACE to use for injection (default: ath0)") { |interface| options.inject = interface }
+        opts.on("-c INTERFACE", "--capture INTERFACE", "The INTERFACE to use for capture (default: ath0)") { |interface| options.capture = interface }
+        opts.on("-d DRIVER", "--driver DRIVER", "The driver used for injection (default: madwifing)") { |driver| options.driver = driver }
+        opts.on("-h CHANNEL", "--channel CHANNEL", "The channel to listen on (default: 11)") { |channel| options.channel = channel.to_i }
+        opts.on("-s", "--speed", "Turn down the delay between emits, to scan more quickly (default: false)") { options.fast = true }
 
         opts.separator("")
         opts.separator("Output options:")

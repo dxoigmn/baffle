@@ -7,8 +7,6 @@ module Baffle
     @device = Lorcon::Device.new(interface, driver)
     @device.fmode      = "INJMON"
     @device.channel    = channel
-    @device.txrate     = 2
-    @device.modulation = "DSSS"
     
     case stuff
       when Dot11::PacketSet
