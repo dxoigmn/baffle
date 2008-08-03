@@ -34,7 +34,7 @@ module Baffle
     Capture.open(*params) do |capture|
       capture.each do |packet|
         packet = packet[0..-5]
-        packet = Radiotap.new(packet)
+        packet = Dot11::Radiotap.new(packet)
         packet = packet.payload
 
         yield packet        
