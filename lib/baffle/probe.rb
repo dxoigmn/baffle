@@ -78,7 +78,7 @@ module Baffle
           
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
             @capture_filters.each do |filter|
-              samples[i] = filter[1].call(packet) if filter[0] =~ packet.data
+              samples[i] << filter[1].call(packet) if filter[0] =~ packet.data
             end
           end
         end

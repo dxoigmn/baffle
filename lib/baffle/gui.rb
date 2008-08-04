@@ -79,6 +79,9 @@ module Baffle
         hypothesis = probe.hypothesize(vector)
 
         # Add to Gtk
+        p temp.path
+        p hypothesis
+        p vector
       end     
     end
   end
