@@ -83,31 +83,22 @@ module Baffle
       page.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC)
       
       @results.append_page(page, Gtk::Label.new("#{bssid} #{essid}"))
-      
-      finished = false
-      progress_text = 'Fingerprinting...'
-      progress_count = 0
-      progress_total = Baffle::Probes.total_injection_values
-      
-      Thread.new do
-        until finished
-          sleep 0.1
-          Gtk.queue do
-            progress.fraction = progress_count.to_f / progress_total.to_f
-            progress.text = progress_text
-          end
-        end
-      end
-      
       @window.show_all
       
       updated_page = Gtk::VBox.new
       
       Thread.new do
+        progress_count = 0
+        progress_total = Baffle::Probes.total_injection_values
+        
         Baffle::Probes.each do |probe|
-          progress_text = "Running #{probe.name} probe..."
+          Gtk.queue { progress.text = "Running #{probe.name} probe..." }
           
-          vector = probe.run(@options) { |packet| progress_count += 1 }
+          vector = probe.run(@options) do
+            progress_count += 1
+            
+            Gtk.queue { progress.fraction = progress_count.to_f / progress_total.to_f }
+          end
           
           unless vector
             warn "Probe was skipped."
