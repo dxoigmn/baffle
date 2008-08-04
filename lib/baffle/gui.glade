@@ -43,60 +43,6 @@
       </child>
 
       <child>
-	<widget class="GtkButton" id="refresh">
-	  <property name="width_request">110</property>
-	  <property name="height_request">32</property>
-	  <property name="visible">True</property>
-	  <property name="can_focus">True</property>
-	  <property name="label" translatable="yes">Refresh</property>
-	  <property name="use_underline">True</property>
-	  <property name="relief">GTK_RELIEF_NORMAL</property>
-	  <property name="focus_on_click">True</property>
-	  <signal name="clicked" handler="on_refresh_clicked" last_modification_time="Sun, 03 Aug 2008 01:38:59 GMT"/>
-	</widget>
-	<packing>
-	  <property name="x">312</property>
-	  <property name="y">8</property>
-	</packing>
-      </child>
-
-      <child>
-	<widget class="GtkButton" id="scan_selected">
-	  <property name="width_request">110</property>
-	  <property name="height_request">32</property>
-	  <property name="visible">True</property>
-	  <property name="can_focus">True</property>
-	  <property name="label" translatable="yes">Scan Selected</property>
-	  <property name="use_underline">True</property>
-	  <property name="relief">GTK_RELIEF_NORMAL</property>
-	  <property name="focus_on_click">True</property>
-	  <signal name="clicked" handler="on_scan_selected_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:08 GMT"/>
-	</widget>
-	<packing>
-	  <property name="x">584</property>
-	  <property name="y">8</property>
-	</packing>
-      </child>
-
-      <child>
-	<widget class="GtkButton" id="scan_all">
-	  <property name="width_request">110</property>
-	  <property name="height_request">32</property>
-	  <property name="visible">True</property>
-	  <property name="can_focus">True</property>
-	  <property name="label" translatable="yes">Scan All</property>
-	  <property name="use_underline">True</property>
-	  <property name="relief">GTK_RELIEF_NORMAL</property>
-	  <property name="focus_on_click">True</property>
-	  <signal name="clicked" handler="on_scan_all_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:04 GMT"/>
-	</widget>
-	<packing>
-	  <property name="x">696</property>
-	  <property name="y">8</property>
-	</packing>
-      </child>
-
-      <child>
 	<widget class="GtkNotebook" id="results">
 	  <property name="width_request">808</property>
 	  <property name="height_request">472</property>
@@ -115,6 +61,60 @@
       </child>
 
       <child>
+	<widget class="GtkButton" id="scan_all">
+	  <property name="width_request">110</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="label" translatable="yes">Scan All</property>
+	  <property name="use_underline">True</property>
+	  <property name="relief">GTK_RELIEF_NORMAL</property>
+	  <property name="focus_on_click">True</property>
+	  <signal name="clicked" handler="on_scan_all_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:04 GMT"/>
+	</widget>
+	<packing>
+	  <property name="x">696</property>
+	  <property name="y">40</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkButton" id="scan_selected">
+	  <property name="width_request">110</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="label" translatable="yes">Scan Selected</property>
+	  <property name="use_underline">True</property>
+	  <property name="relief">GTK_RELIEF_NORMAL</property>
+	  <property name="focus_on_click">True</property>
+	  <signal name="clicked" handler="on_scan_selected_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:08 GMT"/>
+	</widget>
+	<packing>
+	  <property name="x">696</property>
+	  <property name="y">8</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkButton" id="refresh">
+	  <property name="width_request">110</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="label" translatable="yes">Refresh</property>
+	  <property name="use_underline">True</property>
+	  <property name="relief">GTK_RELIEF_NORMAL</property>
+	  <property name="focus_on_click">True</property>
+	  <signal name="clicked" handler="on_refresh_clicked" last_modification_time="Sun, 03 Aug 2008 01:38:59 GMT"/>
+	</widget>
+	<packing>
+	  <property name="x">312</property>
+	  <property name="y">8</property>
+	</packing>
+      </child>
+
+      <child>
 	<widget class="GtkButton" id="remove">
 	  <property name="width_request">110</property>
 	  <property name="height_request">32</property>
@@ -128,6 +128,24 @@
 	</widget>
 	<packing>
 	  <property name="x">424</property>
+	  <property name="y">8</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkButton" id="load">
+	  <property name="width_request">110</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="label" translatable="yes">Load</property>
+	  <property name="use_underline">True</property>
+	  <property name="relief">GTK_RELIEF_NORMAL</property>
+	  <property name="focus_on_click">True</property>
+	  <signal name="clicked" handler="on_load_clicked" last_modification_time="Mon, 04 Aug 2008 22:12:14 GMT"/>
+	</widget>
+	<packing>
+	  <property name="x">536</property>
 	  <property name="y">8</property>
 	</packing>
       </child>

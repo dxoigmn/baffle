@@ -65,6 +65,24 @@ module Baffle
       @mac_addresses.active = 0
     end
     
+    def on_load_clicked(widget)
+      dialog = Gtk::FileChooserDialog.new("Choose a Kismet CSV file", @window, Gtk::FileChooser::ACTION_OPEN, nil, [Gtk::Stock::OPEN, Gtk::Dialog::RESPONSE_ACCEPT], [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL])
+      
+      if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
+        @mac_addresses.model.clear
+        
+        File.open(dialog.filename).each_line do |line|
+          num, type, essid, bssid, rest = line.split(';')
+          
+          @mac_addresses.append_text("#{bssid} #{essid}") if type == 'infrastructure' && bssid =~ /^(([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2})$/ 
+        end
+        
+        @mac_addresses.active = 0
+      end
+      
+      dialog.destroy
+    end
+    
     private
     
     def parse(text)
