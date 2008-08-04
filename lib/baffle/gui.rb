@@ -44,6 +44,8 @@ module Baffle
         
         essid = nil
       end
+      
+      @mac_addresses.active = 0
     end
     
     def on_scan_selected_clicked(widget)
@@ -56,6 +58,11 @@ module Baffle
         args = parse(iter.get_value(0))
         scan(*args) if args
       end
+    end
+    
+    def on_remove_clicked(widget)
+      @mac_addresses.remove_text(@mac_addresses.active)
+      @mac_addresses.active = 0
     end
     
     private
