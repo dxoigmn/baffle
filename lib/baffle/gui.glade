@@ -3,13 +3,15 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="window1">
+<widget class="GtkWindow" id="window">
+  <property name="width_request">810</property>
+  <property name="height_request">530</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">Baffle</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
-  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="window_position">GTK_WIN_POS_CENTER</property>
   <property name="modal">False</property>
-  <property name="resizable">True</property>
+  <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
@@ -21,11 +23,28 @@
 
   <child>
     <widget class="GtkFixed" id="fixed1">
+      <property name="width_request">820</property>
+      <property name="height_request">500</property>
       <property name="visible">True</property>
 
       <child>
+	<widget class="GtkComboBoxEntry" id="mac_addresses">
+	  <property name="width_request">304</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="add_tearoffs">False</property>
+	  <property name="has_frame">True</property>
+	  <property name="focus_on_click">True</property>
+	</widget>
+	<packing>
+	  <property name="x">0</property>
+	  <property name="y">8</property>
+	</packing>
+      </child>
+
+      <child>
 	<widget class="GtkButton" id="refresh">
-	  <property name="width_request">112</property>
+	  <property name="width_request">110</property>
 	  <property name="height_request">32</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
@@ -36,32 +55,31 @@
 	  <signal name="clicked" handler="on_refresh_clicked" last_modification_time="Sun, 03 Aug 2008 01:38:59 GMT"/>
 	</widget>
 	<packing>
-	  <property name="x">296</property>
+	  <property name="x">312</property>
 	  <property name="y">8</property>
 	</packing>
       </child>
 
       <child>
-	<widget class="GtkButton" id="scan_all">
-	  <property name="width_request">104</property>
+	<widget class="GtkButton" id="remove">
+	  <property name="width_request">110</property>
 	  <property name="height_request">32</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
-	  <property name="label" translatable="yes">Scan All</property>
+	  <property name="label" translatable="yes">Remove</property>
 	  <property name="use_underline">True</property>
 	  <property name="relief">GTK_RELIEF_NORMAL</property>
 	  <property name="focus_on_click">True</property>
-	  <signal name="clicked" handler="on_scan_all_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:04 GMT"/>
 	</widget>
 	<packing>
-	  <property name="x">184</property>
-	  <property name="y">272</property>
+	  <property name="x">424</property>
+	  <property name="y">8</property>
 	</packing>
       </child>
 
       <child>
 	<widget class="GtkButton" id="scan_selected">
-	  <property name="width_request">104</property>
+	  <property name="width_request">110</property>
 	  <property name="height_request">32</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
@@ -72,15 +90,33 @@
 	  <signal name="clicked" handler="on_scan_selected_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:08 GMT"/>
 	</widget>
 	<packing>
-	  <property name="x">304</property>
-	  <property name="y">272</property>
+	  <property name="x">584</property>
+	  <property name="y">8</property>
 	</packing>
       </child>
 
       <child>
-	<widget class="GtkNotebook" id="images">
-	  <property name="width_request">400</property>
-	  <property name="height_request">200</property>
+	<widget class="GtkButton" id="scan_all">
+	  <property name="width_request">110</property>
+	  <property name="height_request">32</property>
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="label" translatable="yes">Scan All</property>
+	  <property name="use_underline">True</property>
+	  <property name="relief">GTK_RELIEF_NORMAL</property>
+	  <property name="focus_on_click">True</property>
+	  <signal name="clicked" handler="on_scan_all_clicked" last_modification_time="Sun, 03 Aug 2008 01:39:04 GMT"/>
+	</widget>
+	<packing>
+	  <property name="x">696</property>
+	  <property name="y">8</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkNotebook" id="results">
+	  <property name="width_request">808</property>
+	  <property name="height_request">472</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
 	  <property name="show_tabs">True</property>
@@ -94,46 +130,12 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkLabel" id="label2">
-	      <property name="visible">True</property>
-	      <property name="label" translatable="yes">label2</property>
-	      <property name="use_underline">False</property>
-	      <property name="use_markup">False</property>
-	      <property name="justify">GTK_JUSTIFY_LEFT</property>
-	      <property name="wrap">False</property>
-	      <property name="selectable">False</property>
-	      <property name="xalign">0.5</property>
-	      <property name="yalign">0.5</property>
-	      <property name="xpad">0</property>
-	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
-	    </widget>
-	    <packing>
-	      <property name="type">tab</property>
-	    </packing>
+	    <placeholder/>
 	  </child>
 	</widget>
 	<packing>
-	  <property name="x">8</property>
+	  <property name="x">0</property>
 	  <property name="y">56</property>
-	</packing>
-      </child>
-
-      <child>
-	<widget class="GtkComboBoxEntry" id="mac_addresses">
-	  <property name="width_request">272</property>
-	  <property name="height_request">32</property>
-	  <property name="visible">True</property>
-	  <property name="add_tearoffs">False</property>
-	  <property name="has_frame">True</property>
-	  <property name="focus_on_click">True</property>
-	</widget>
-	<packing>
-	  <property name="x">8</property>
-	  <property name="y">8</property>
 	</packing>
       </child>
     </widget>

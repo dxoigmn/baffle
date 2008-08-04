@@ -12,6 +12,7 @@ module Baffle
 
     injection_values.each do |args|
       packet = injection_proc.call(options, *args)
+      yield packet if block_given?
       send_p(packet.data)
       sleep 0.05
     end

@@ -45,11 +45,17 @@ module Baffle
         yield probe
       end
     end
+    
+    def self.total_injection_values
+      self.load
+      
+      @probes.inject(0) { |sum, probe| sum += probe.injection_values.size * probe.repeats }
+    end
   end
-
+  
   class Probe
     attr_reader :name, :training_data, :injection_values, :injection_proc, :capture_filters
-
+    
     def initialize(name, &block)
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
@@ -58,11 +64,11 @@ module Baffle
       @injection_proc   = nil
       @capture_filters  = []
       @repeat           = 1
-
+      
       instance_eval(&block)
     end
     
-    def run(options)
+    def run(options, &block)
       unless options.train?
         return nil unless learn
       end
@@ -82,14 +88,14 @@ module Baffle
             end
           end
         end
-      
-        Baffle::emit(options, @injection_proc, @injection_values)
+        
+        Baffle::emit(options, @injection_proc, @injection_values, &block)
         sniff_thread.kill
       end
       
       @vector = @compute_vector.call(samples)
     end
-
+    
     def inject(car, *cdr, &block)
       @injection_proc   = block
       @injection_values = car.to_a rescue []
@@ -99,7 +105,7 @@ module Baffle
     def compute_vector(&block)
       @compute_vector = block
     end
-
+    
     def capture(filter, &block)
       case filter
       when Dot11::Packet
@@ -117,6 +123,10 @@ module Baffle
     
     def repeat(count)
       @repeat = count
+    end
+    
+    def repeats
+      @repeat
     end
     
     # Gets called when all training samples have been loaded
@@ -145,22 +155,26 @@ module Baffle
       @u2 = Linalg::DMatrix.join_columns [u.column(0), u.column(1)]
       @v2 = Linalg::DMatrix.join_columns [vt.column(0), vt.column(1)]
       @eig2 = Linalg::DMatrix.columns [s.column(0).to_a.flatten[0,2], s.column(1).to_a.flatten[0,2]]
-
+      
       true
     end
-
+    
     # Build a hash of hypotheses on the given vector, with confidence ratings on each hypothesis
     def hypothesize(vector)
       similarities = []
       
       vector_embedded = Linalg::DMatrix[vector] * @u2 * @eig2.inv
-
+      
       @v2.rows.each_with_index do |row, i|
         similarities << [@names[i], vector_embedded.transpose.dot(row.transpose) / (row.norm * vector_embedded.norm)]
       end
-    
-      name, score = similarities.sort_by { |name, score| -score }.first
-
+      
+      sorted_similarities = similarities.delete_if { |name, score| score.nan? }.sort_by { |name, score| -score }
+      name, score = sorted_similarities.first
+      
+      name ||= 'Unknown'
+      score ||= 'NaN'
+      
       "#{name} (#{score})"
     end
   end
