@@ -23,4 +23,5 @@ Gem::Specification.new do |s|
   s.add_dependency('dxoigmn-rb-lorcon', ['>= 0.1.0'])
   s.add_dependency('dxoigmn-rb-pcap', ['>= 0.1.0'])
   s.add_dependency('dxoigmn-dot11', ['>= 0.1.0'])
+  s.add_dependency('facets', ['>= 2.4.1'])
 end

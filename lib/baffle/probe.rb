@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'dot11'
 require 'rb-pcap'
+require 'facets/array/product'
 require 'linalg'
 require 'thread'
 require 'yaml'
@@ -47,13 +48,14 @@ module Baffle
   end
 
   class Probe
-    attr_reader :name, :training_data, :injection_data, :capture_filters
+    attr_reader :name, :training_data, :injection_values, :injection_proc, :capture_filters
 
     def initialize(name, &block)
       @name             = name
       @training_data    = Hash.new {|hash, key| hash[key] = []}
       @names            = []
-      @injection_data   = nil
+      @injection_values = nil
+      @injection_proc   = nil
       @capture_filters  = []
       @repeat           = 1
 
@@ -68,30 +70,30 @@ module Baffle
       samples = []
       
       @repeat.times do |i|
-        samples[i] = Hash.new(0)
+        samples[i] = []
         
         sniff_thread = Thread.new do
           # We want to only listen for packets that match the filters we've defined
-          filter = @capture_filters.reject{|f| f[0] == :timeout}.map{|f| "(#{f[0].expression})"}.join(" || ")
+          filter = @capture_filters.map{|f| "(#{f[0].expression})"}.join(" || ")
           
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
             @capture_filters.each do |filter|
-              if filter[0] =~ packet.data
-                samples[i][packet.addr1.to_i & 0xffff] = filter[1].call(packet)
-              end
+              samples[i] = filter[1].call(packet) if filter[0] =~ packet.data
             end
           end
         end
-       
-        Baffle::emit(options.inject, options.driver, options.channel, @injection_data, options.fast? ? 0.05 : 0.3)
+      
+        Baffle::emit(options, @injection_proc, @injection_values)
         sniff_thread.kill
       end
       
       @vector = @compute_vector.call(samples)
     end
 
-    def inject(packets)
-      @injection_data = packets
+    def inject(car, *cdr, &block)
+      @injection_proc   = block
+      @injection_values = car.to_a rescue []
+      @injection_values = @injection_values.product(*cdr.map{ |v| v.to_a rescue []})
     end
     
     def compute_vector(&block)
@@ -115,10 +117,6 @@ module Baffle
     
     def repeat(count)
       @repeat = count
-    end
-    
-    def timeout(&block)
-      @capture_filters << [:timeout, block]
     end
     
     # Gets called when all training samples have been loaded

@@ -3,26 +3,18 @@ require 'rb-pcap'
 require 'rb-lorcon'
 
 module Baffle
-  def self.emit(interface, driver, channel, stuff, sleep_interval = 0.5)
-    @device = Lorcon::Device.new(interface, driver)
+  def self.emit(options, injection_proc, injection_values)
+    @device = Lorcon::Device.new(options.inject, options.driver)
     @device.fmode      = "INJMON"
-    @device.channel    = channel
+    @device.channel    = options.channel
     
-    case stuff
-      when Dot11::PacketSet
-        local_mac = nil #0xbaaaad000000
-        stuff.each_with_index do |packet, index|
-          local_mac ||= packet.addr2.to_i
-          local_mac = (local_mac & 0xFFFFFFFF0000) | index
-          packet.addr2 = local_mac
-          #puts "emitting"
-          #p packet
+    injection_values << [nil] if injection_values.empty?
 
-          send_p packet.data
-          sleep sleep_interval
-        end
-      when Dot11::Packet
-        send_p stuff
+    injection_values.each do |args|
+      packet = injection_proc.call(options, *args)
+      puts "sending: #{packet.inspect}"
+      send_p(packet.data)
+      sleep 0.05
     end
   end  
   

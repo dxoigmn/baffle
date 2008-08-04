@@ -1,14 +1,6 @@
 require 'optparse'
 
 module Baffle
-  def self.options
-    @options
-  end
- 
-  def self.options=(value)
-    @options = value
-  end
-
   class Options
     attr_accessor :inject
     attr_accessor :capture
@@ -20,6 +12,7 @@ module Baffle
     attr_accessor :plot_prefix
     attr_accessor :bssid, :essid
     attr_accessor :fast
+    attr_accessor :gui
 
     def initialize
       @inject   = 'ath0'
@@ -29,11 +22,13 @@ module Baffle
       @fast     = false
       @train    = false
       @verbose  = false
+      @gui      = false
     end
     
-    def fast?; self.fast; end
-    def train?; self.train; end
-    def verbose?; self.verbose; end
+    def fast?; @fast == true; end
+    def train?; @train == true; end
+    def verbose?; @verbose == true; end
+    def gui?; @gui == true; end
     def interface=(value); self.inject = value; self.capture = value; end
     
     def self.parse(args)
@@ -70,8 +65,10 @@ module Baffle
         opts.on("-v", "--verbose", "More detailed output") { options.verbose = true }
         opts.on("-?", "--help", "Show this message") { puts opts.help; exit }
         opts.on("--version", "Print the version") { puts opts.ver; exit }
-        
+          
         opts.separator("")
+        opts.separator("Other options:")
+        opts.on("-g", "--gui", "Show gui") { options.gui = true }
       end
     
       value = opts.parse!(args).first
@@ -82,12 +79,12 @@ module Baffle
         options.essid = value
       end
     
-      unless options.bssid || options.essid
+      unless options.gui? || options.bssid || options.essid
         puts opts.help 
         exit
       end
-    
-      Baffle.options = options
+
+      options
     end
   end
 end
