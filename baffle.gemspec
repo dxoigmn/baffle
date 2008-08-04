@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'baffle'
-  s.version       = '0.1.0'
+  s.version       = '0.1.1'
   s.date          = '2008-08-02'
   s.summary       = 'A Behavioral Active Fingerprinting tool for 802.11 APs, operating entirely within the Link Layer.'
   s.homepage      = 'http://github.com/dxoigmn/baffle'
