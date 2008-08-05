@@ -3,7 +3,7 @@
 require 'gtk2'
 require 'libglade2'
 require 'tempfile'
-require 'rubygems'
+require 'thread'
 
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'baffle.rb'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'gtk_queue.rb'))
@@ -15,6 +15,7 @@ module Baffle
     def initialize(options)
       @glade = GladeXML.new(@@glade_path) { |handler| method(handler) }
       @options = options
+      @scan_lock = Mutex.new
       
       @window = @glade.get_widget('window')
       @window.signal_connect("destroy") { Gtk.main_quit }
@@ -100,12 +101,21 @@ module Baffle
       page.add_with_viewport(Gtk::VBox.new.add(progress))
       page.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC)
       
-      @results.append_page(page, Gtk::Label.new("#{bssid} #{essid}"))
+      page_label = Gtk::Label.new("#{bssid} #{essid}")
+      
+      @results.append_page(page, page_label)
       @window.show_all
       
+      cur_page = @results.n_pages - 1
       updated_page = Gtk::VBox.new
       
       Thread.new do
+        Gtk.queue { progress.text = 'Waiting to acquire scan lock...' }
+        
+        @scan_lock.lock
+        
+        Gtk.queue { @results.page = cur_page }
+        
         progress_count = 0
         progress_total = Baffle::Probes.total_injection_values
         
@@ -138,15 +148,16 @@ module Baffle
           end
         end
         
-        finished = true
-        
         Gtk.queue do
           page.each do |child|
             page.remove(child)
           end
           page.add_with_viewport(updated_page)
+          page_label.set_markup("<b>#{page_label.text}</b>")
           @window.show_all
         end
+        
+        @scan_lock.unlock
       end
     end
     
