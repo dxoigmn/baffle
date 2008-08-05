@@ -38,7 +38,7 @@ module Baffle
       @mac_addresses.model.clear
       
       iwlist.each_line do |line|
-        bssid = $1 if line =~ /Cell \d+ - Address: (([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2})/      
+        bssid = $1 if line =~ /Cell \d+ - Address: (([0-9a-fA-F]{2}[:]){5}[0-9a-fA-F]{2})/
         essid = $1 if line =~ /ESSID:"([^"]+)"/
         
         @mac_addresses.append_text("#{bssid} #{essid}") if essid 
@@ -75,7 +75,7 @@ module Baffle
         File.open(dialog.filename).each_line do |line|
           num, type, essid, bssid, rest = line.split(';')
           
-          @mac_addresses.append_text("#{bssid} #{essid}") if type == 'infrastructure' && bssid =~ /^(([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2})$/ 
+          @mac_addresses.append_text("#{bssid} #{essid}") if type == 'infrastructure' && bssid =~ /^(([0-9a-fA-F]{2}[:]){5}[0-9a-fA-F]{2})$/
         end
         
         @mac_addresses.active = 0
@@ -87,7 +87,7 @@ module Baffle
     private
     
     def parse(text)
-      return $1, $3 if text =~ /^(([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}) (.*)$/ 
+      return $1, $3 if text =~ /^(([0-9a-fA-F]{2}[:]){5}[0-9a-fA-F]{2}) (.*)$/
     end
     
     def scan(bssid, essid)
