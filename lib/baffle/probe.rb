@@ -80,13 +80,24 @@ module Baffle
         samples[i] = []
         
         filters = {}
-        @filter_procs.each { |name, filter_proc| filters[name] = filter_proc.call(options) }
+        @filter_procs.each do |name, filter_proc|
+          filter = filter_proc.call(options)
+          
+          case filter
+          when Dot11::Packet
+            filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter) if !filter.kind_of?(Dot11::Dot11)
+          when Dot11::PacketSet
+            puts "filter is Dot11::PacketSet"
+            filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter) if filter.packet_class != Dot11::Dot11
+          end
+          
+          filters[name] = Capture::Filter.new(filter.to_filter)
+        end
         
         sniff_thread = Thread.new do
-          filter = filters.values.map{|f| "(#{f[0].expression})"}.join(" || ")
+          filter = filters.values.map { |filter| "(#{filter.expression})" }.join(" || ")
           
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
-            
             filters.each do |name, filter|
               samples[i] << @capture_procs[name].call(packet) if filter =~ packet.data
             end
@@ -116,20 +127,6 @@ module Baffle
     
     def capture(name, &block)
       @capture_procs[name] = block
-=begin
-      case filter
-      when Dot11::Packet
-        if !filter.kind_of?(Dot11::Dot11)
-          filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter)
-        end
-      when Dot11::PacketSet
-        if filter.packet_class != Dot11::Dot11
-          filter = Dot11::PacketSet.new(Dot11::Dot11, :payload => filter)
-        end
-      end
-      
-      @capture_filters << [Capture::Filter.new(filter.to_filter), block]
-=end
     end
     
     def repeat(count)
