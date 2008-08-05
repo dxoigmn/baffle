@@ -25,6 +25,9 @@ module Baffle
       alpha = 1 if alpha.nan?
       width = WIDTH if width.nan?
       
+      alpha = (respond_count > 1 ? 1 : 0.05)
+      width = 3
+      
       ("%08d" %flags_value.to_s(2)).split(//).each_with_index do |c, i|
         y = 1 + i * (HEIGHT + 1)
         color = (c == "0") ? "black" : "red"
