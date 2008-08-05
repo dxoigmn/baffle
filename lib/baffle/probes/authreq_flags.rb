@@ -1,6 +1,9 @@
 probe "authreq_flags" do
   inject(0..255) do |options, flags|
-    local_bssid = "ba:aa:ad:00:00:" + "00#{flags.to_s(16)}".slice(-2..-1)
+    local_bssid   = "ba:ad:"
+    local_bssid  << options.bssid.slice(-5..-1)
+    local_bssid  << ":00:"
+    local_bssid  << "00#{flags.to_s(16)}".slice(-2..-1)
     
     Dot11::Dot11.new(:subtype =>   0xb,
                      :type =>      0x0,
@@ -16,7 +19,15 @@ probe "authreq_flags" do
                                                                :status => 0x0000)) 
   end
   
-  capture(Dot11::Dot11.new(:type => 0, :subtype => 0xb, :addr1 => "ba:aa:ad:00:00:00/32")) do |packet|
+  filter :subtype_addr1 do |options|
+    local_bssid   = "ba:ad:"
+    local_bssid  << options.bssid.slice(-5..-1)
+    local_bssid  << ":00:00/32"
+    
+    Dot11::Dot11.new(:type => 0, :subtype => 0xb, :addr1 => local_bssid)
+  end
+  
+  capture :subtype_addr1 do |packet|
     packet.addr1.to_i & 0xff
   end
   

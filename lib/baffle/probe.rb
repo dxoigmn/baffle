@@ -54,7 +54,7 @@ module Baffle
   end
   
   class Probe
-    attr_reader :name, :training_data, :injection_values, :injection_proc, :capture_filters
+    attr_reader :name, :training_data, :injection_values, :injection_proc, :filter_procs, :capture_procs
     
     def initialize(name, &block)
       @name             = name
@@ -62,7 +62,8 @@ module Baffle
       @names            = []
       @injection_values = nil
       @injection_proc   = nil
-      @capture_filters  = []
+      @filter_procs     = {}
+      @capture_procs    = {}
       @repeat           = 1
       
       instance_eval(&block)
@@ -78,13 +79,16 @@ module Baffle
       @repeat.times do |i|
         samples[i] = []
         
+        filters = {}
+        @filter_procs.each { |name, filter_proc| filters[name] = filter_proc.call(options) }
+        
         sniff_thread = Thread.new do
-          # We want to only listen for packets that match the filters we've defined
-          filter = @capture_filters.map{|f| "(#{f[0].expression})"}.join(" || ")
+          filter = filters.values.map{|f| "(#{f[0].expression})"}.join(" || ")
           
           Baffle::sniff(:device => options.capture, :filter => filter) do |packet|
-            @capture_filters.each do |filter|
-              samples[i] << filter[1].call(packet) if filter[0] =~ packet.data
+            
+            filters.each do |name, filter|
+              samples[i] << @capture_procs[name].call(packet) if filter =~ packet.data
             end
           end
         end
@@ -106,7 +110,13 @@ module Baffle
       @compute_vector = block
     end
     
-    def capture(filter, &block)
+    def filter(name, &block)
+      @filter_procs[name] = block
+    end
+    
+    def capture(name, &block)
+      @capture_procs[name] = block
+=begin
       case filter
       when Dot11::Packet
         if !filter.kind_of?(Dot11::Dot11)
@@ -119,6 +129,7 @@ module Baffle
       end
       
       @capture_filters << [Capture::Filter.new(filter.to_filter), block]
+=end
     end
     
     def repeat(count)
