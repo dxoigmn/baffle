@@ -91,9 +91,6 @@ module Baffle
     end
     
     def scan(bssid, essid)
-      @options.essid = essid
-      @options.bssid = bssid
-      
       progress = Gtk::ProgressBar.new
       progress.pulse_step = 0.05
       
@@ -113,6 +110,9 @@ module Baffle
         Gtk.queue { progress.text = 'Waiting to acquire scan lock...' }
         
         @scan_lock.lock
+        
+        @options.essid = essid
+        @options.bssid = bssid
         
         Gtk.queue { @results.page = cur_page }
         
