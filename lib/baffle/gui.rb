@@ -144,7 +144,7 @@ module Baffle
           hypothesis = probe.hypothesize(vector)
           
           Gtk.queue do
-            updated_page.add(Gtk::Label.new(hypothesis)).add(Gtk::Image.new(temp_path))
+            updated_page.add(Gtk::Label.new("#{probe.name} - #{hypothesis}")).add(Gtk::Image.new(temp_path))
           end
         end
         
