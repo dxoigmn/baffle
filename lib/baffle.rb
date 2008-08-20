@@ -34,17 +34,16 @@ module Baffle
       end
       
       if options.fpdiagram
-        File.open("#{options.fpdiagram}#{probe.name}.svg", 'w+') do |out|
-          out.write Baffle.fingerprint_diagram(vector).to_s
+        File.open("#{options.fpdiagram}#{probe.name}.svg", 'w+') do |f|
+          f << Baffle.fingerprint_diagram(vector).to_s
         end
       end
       
       puts "Vector: #{vector.inspect}"
       
-      hypotheses[probe.name] = probe.hypothesize(vector)
-      
       unless options.train?
-        puts "#{probe.name} hypothesizes: #{probe.hypothesize(vector)}"
+        hypotheses[probe.name] = probe.hypothesize(vector)
+        puts "#{probe.name} hypothesizes: #{hypotheses[probe.name]}"
       end
     end
     
