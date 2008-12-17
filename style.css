@@ -1,41 +1,42 @@
 html, body {
-	width: 800px;
-	margin: 0 auto 0 auto;
-	font-family: sans-serif;
-	font-size: large;
-	height: 100%;
-	overflow: hidden;
+  /*width: 800px;*/
+  margin: 0 auto 0 auto;
+  font-family: sans-serif;
+  font-size: large;
+  height: 100%;
+  overflow: hidden;
 }
 
 div#scroller {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	z-index: 1;
-	overflow: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: auto;
 }
 
 div#body {
-	width: 800px;
-	padding: 1em;
-	margin: 1em;
-	background-image: url(white50.png);
+  margin: 1em auto 0 auto;
+  width: 800px;
+  padding: 1em;
+  /*margin: 1em;*/
+  background-image: url(white50.png);
 }
 
 img#fingerpint {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
 }
 
 h1 {
-	font-size: 300%;
-	margin-top: 0;
+  font-size: 300%;
+  margin-top: 0;
 }
 
 sup {
@@ -47,7 +48,7 @@ dl {
 }
 
 p#credit {
-	font-size: xx-small;
-	text-align: right;
-	margin-bottom: 0;
+  font-size: xx-small;
+  text-align: right;
+  margin-bottom: 0;
 }

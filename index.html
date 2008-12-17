@@ -1,54 +1,38 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<head>
-  <title>BAFFLE</title>
-  <link rel="stylesheet" type="text/css" href="style.css" />
-</head>
-<body>
-<div id="body">
-  <h1>BAFFLE</h1>
-
-  <p>BAFFLE is a <strong>B</strong>ehavioral <strong>A</strong>ctive <strong>F</strong>ingerprinting tool
-for 802.11 APs, operating entirely within the <strong>L</strong>ink <strong>L</strong>ayer<sup><a href="#footnote-1" id="footnote-1-referrer">[1]</a></sup>. 
-It sends non-standard Probe Request and Authentication Request frames
-and distinguishes between different AP chipset-driver combinations
-based on their observed responses.</p>
-
-  <p>BAFFLE is written in Ruby and uses <a href="http://802.11ninja.net/lorcon">LORCON</a>
-and <a href="http://www.tcpdump.org/">libpcap</a> (primarily with the 
-<a href="http://www.madwifi.net/">Atheros madwifi</a> combination).</p>
-
-  <p>BAFFLE was presented and demoed at <a href="http://shmoocon.org">Shmoocon 2008</a>:
-<a href="shmoocon08-slides.pdf">[presentation slides]</a><sup><a href="#footnote-2" id="footnote-2-referrer">[2]</a></sup></p>
-
-  <p>BAFFLE was also presented and demoed at <a href="http://www.blackhat.com/">Blackhat USA 2008</a>.</p>
-
-  <p>Our <a href="http://sandiego.toorcon.org/content/section/3/9/">Toorcon X</a>
-<a href="toorcon08-slides.pdf">presentation</a> went deeper in the details of Ruby implementation and our suggested technique for finer AP fingerprinting using timestamp clock skew in beacon frames.</p>
-
-  <p>We have created a <a href="http://www.youtube.com/watch?v=OibU7IPjOUY&fmt=18">simple video demostration</a> of how BAFFLE works.</p>
-
-  <p><a href="http://github.com/dxoigmn/baffle/">Code available</a> @ <a href="http://www.github.com">github</a> under the <a href="http://www.gnu.org/copyleft/gpl.html">GPL v3</a>.</p>
-
-  <p>You can also install it via <code>gem install dxoigmn-baffle</code>, assuming you have <a href="http://gems.github.com">http://gems.github.com/</a> in your gem sources (see link for details).</p>
-
-  <hr />
-
-  <dl>
-    <dt><a id="footnote-1" href="#footnote-1-referrer">[1]</a></dt>
-    <dd>Yes, the number of <strong>F</strong>s and <strong>L</strong>s in the project name does not quite match
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>BAFFLE</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <div id="body">
+      <h1>BAFFLE</h1>
+      <p>BAFFLE is a <strong>B</strong>ehavioral <strong>A</strong>ctive <strong>F</strong>ingerprinting tool for 802.11 APs, operating entirely within the <strong>L</strong>ink <strong>L</strong>ayer<sup><a href="#footnote-1" id="footnote-1-referrer">[1]</a></sup>.  It sends non-standard Probe Request and Authentication Request frames and distinguishes between different AP chipset-driver combinations based on their observed responses.</p>
+      <p>BAFFLE is written in Ruby and uses <a href="http://802.11ninja.net/lorcon">LORCON</a> and <a href="http://www.tcpdump.org/">libpcap</a> (primarily with the  <a href="http://www.madwifi.net/">Atheros madwifi</a> combination).</p>
+      <p>BAFFLE was presented and demoed at <a href="http://shmoocon.org">Shmoocon 2008</a>: <a href="shmoocon08-slides.pdf">[presentation slides]</a><sup><a href="#footnote-2" id="footnote-2-referrer">[2]</a></sup></p>
+      <p>BAFFLE was also presented and demoed at <a href="http://www.blackhat.com/">Blackhat USA 2008</a>.</p>
+      <p>Our <a href="http://sandiego.toorcon.org/content/section/3/9/">Toorcon X</a> <a href="toorcon08-slides.pdf">presentation</a> went deeper in the details of Ruby implementation and our suggested technique for finer AP fingerprinting using timestamp clock skew in beacon frames.</p>
+      <p>We have created a <a href="http://www.youtube.com/watch?v=OibU7IPjOUY&amp;fmt=18">simple video demostration</a> of how BAFFLE works.</p>
+      <p><a href="http://github.com/dxoigmn/baffle/">Code available</a> @ <a href="http://www.github.com">github</a> under the <a href="http://www.gnu.org/copyleft/gpl.html">GPL v3</a>.</p>
+      <p>You can also install it via <code>gem install dxoigmn-baffle</code>, assuming you have <a href="http://gems.github.com">http://gems.github.com/</a> in your gem sources (see link for details).</p>
+      <hr />
+      <dl>
+        <dt>
+          <a id="footnote-1" href="#footnote-1-referrer">[1]</a>
+        </dt>
+        <dd>Yes, the number of <strong>F</strong>s and <strong>L</strong>s in the project name does not quite match
 the acronym. We started with BAFLL, but quickly grew tired of (mis)spelling it.</dd>
-
-    <dt><a id="footnote-2" href="#footnote-2-referrer">[2]</a></dt>
-    <dd>Due to an unfortunate typo in our submission, the advertized title 
+        <dt>
+          <a id="footnote-2" href="#footnote-2-referrer">[2]</a>
+        </dt>
+        <dd>Due to an unfortunate typo in our submission, the advertized title 
 of our talk had "fingerpinting" rather that "fingerprinting". We felt we
 had to stick by the name at least for the duration of the talk.</dd>
-  </dl>
-
-  <img src="fingerpint.jpg" id="fingerpint"/>
-  <p id="credit">image credit to <a href="http://flickr.com/photos/mn_francis/392404523/">cackhanded</a></p>
-</div>
-</body>
+      </dl>
+      <img src="fingerpint.jpg" id="fingerpint" alt="Fingerpint" />
+      <p id="credit">image credit to <a href="http://flickr.com/photos/mn_francis/392404523/">cackhanded</a></p>
+    </div>
+  </body>
 </html>
-
